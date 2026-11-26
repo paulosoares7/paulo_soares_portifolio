@@ -1,2 +1,5 @@
 # Scripts shell precisam de LF para rodar dentro do container Linux.
 *.sh text eol=lf
+# SQL e migrações sempre em LF: o Prisma guarda o checksum do arquivo, e
+# CRLF no Windows faria a migração parecer alterada.
+*.sql eol=lf
