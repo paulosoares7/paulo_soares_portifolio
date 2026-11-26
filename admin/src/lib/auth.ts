@@ -46,7 +46,10 @@ export async function createAdminSession(adminUserId: number): Promise<void> {
 
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: true, // navegadores aceitam Secure em http://localhost
+    // Secure sempre em produção. Em desenvolvimento fica de fora porque o
+    // navegador só aceita cookie Secure em http://localhost, e pelo celular o
+    // painel abre pelo IP do computador (DEV_HOST no .env.local).
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     expires: expiresAt,

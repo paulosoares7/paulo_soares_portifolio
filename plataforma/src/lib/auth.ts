@@ -39,7 +39,12 @@ export const auth = betterAuth({
   appName: "Aulas de Física",
   baseURL: process.env.BETTER_AUTH_URL || SITE_URL,
   secret: process.env.BETTER_AUTH_SECRET,
-  trustedOrigins: [SITE_URL],
+  // Em desenvolvimento, aceita também o IP do computador (DEV_HOST no
+  // .env.local), para entrar pelo celular na mesma rede Wi-Fi.
+  trustedOrigins:
+    process.env.NODE_ENV !== "production" && process.env.DEV_HOST
+      ? [SITE_URL, `http://${process.env.DEV_HOST}:3002`]
+      : [SITE_URL],
   database: prismaAdapter(prisma, { provider: "mysql" }),
 
   // Nomes dos models do Prisma; os campos já têm os nomes que o Better Auth usa,
