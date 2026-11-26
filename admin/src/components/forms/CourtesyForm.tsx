@@ -21,12 +21,13 @@ type CourtesyFormProps = {
  * Google ou cria a senha pelo link de redefinição, usando o mesmo e-mail.
  */
 export function CourtesyForm({ students, plans, courses, defaultEnd }: CourtesyFormProps) {
-  const { formProps, state, pending, errors } = useFormAction<
-    typeof courtesySchema,
-    ActionState
-  >(courtesySchema, createCourtesy, {
-    resetOnSuccess: true,
-  });
+  const { formProps, state, pending, errors } = useFormAction<typeof courtesySchema, ActionState>(
+    courtesySchema,
+    createCourtesy,
+    {
+      resetOnSuccess: true,
+    },
+  );
   const [mode, setMode] = useState<"existing" | "new">(students.length ? "existing" : "new");
   const [planId, setPlanId] = useState(plans[0]?.id ?? 0);
   const maxCourses = plans.find((p) => p.id === planId)?.maxCourses ?? 3;
@@ -131,8 +132,8 @@ export function CourtesyForm({ students, plans, courses, defaultEnd }: CourtesyF
         </fieldset>
 
         <p className="text-muted text-sm md:col-span-2">
-          O aluno entra na plataforma com o Google ou com e-mail e senha, usando este mesmo
-          e-mail. Para quem ainda não tem senha, envie o link de redefinição pela página do aluno.
+          O aluno entra na plataforma com o Google ou com e-mail e senha, usando este mesmo e-mail.
+          Para quem ainda não tem senha, envie o link de redefinição pela página do aluno.
         </p>
         <div className="md:col-span-2">
           <FormFooter state={state} pending={pending} label="Criar cortesia" />

@@ -14,6 +14,19 @@ export const SOCIAL_NETWORKS = {
   lattes: "Currículo Lattes",
 } as const;
 
+/**
+ * Redes que podem ser cadastradas, na ordem do formulário. As demais do enum
+ * (YouTube, X...) só aparecem em links antigos, que podem ser removidos.
+ */
+export const SOCIAL_NETWORK_OPTIONS = [
+  "linkedin",
+  "lattes",
+  "instagram",
+  "facebook",
+  "github",
+  "email",
+] as const;
+
 export const DEGREE_LEVELS = {
   technical: "Técnico",
   undergraduate: "Graduação",
@@ -141,4 +154,19 @@ export function enumValues<T extends Record<string, string>>(
   labels: T,
 ): [keyof T & string, ...(keyof T & string)[]] {
   return Object.keys(labels) as [keyof T & string, ...(keyof T & string)[]];
+}
+
+/**
+ * Como o aluno entra na plataforma, a partir das contas dele (student_accounts).
+ * @param providers provider_id de cada conta ("google", "credential").
+ * @returns Texto curto para o painel.
+ */
+export function signInMethodsLabel(providers: string[]): string {
+  const google = providers.includes("google");
+  const password = providers.includes("credential");
+  if (google && password) return "Google e e-mail";
+  if (google) return "Google";
+  if (password) return "E-mail e senha";
+  // Ex.: aluno de cortesia que ainda não entrou nem criou senha.
+  return "Ainda sem acesso";
 }

@@ -19,6 +19,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@portfolio/database": "*",
     "bcryptjs": "^3.0.3",
+    "better-auth": "1.7.28",
     "fast-xml-parser": "^5.12.1",
     "fflate": "^0.8.3",
     "katex": "^0.19.1",

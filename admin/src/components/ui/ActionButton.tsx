@@ -15,7 +15,7 @@ type ActionButtonProps = {
   title?: string;
 };
 
-/** Botão que executa uma server action e mostra o erro, se houver. */
+/** Botão que executa uma server action e mostra a mensagem devolvida (erro ou sucesso). */
 export function ActionButton({
   action,
   children,
@@ -25,13 +25,13 @@ export function ActionButton({
   title,
 }: ActionButtonProps) {
   const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<ActionState | null>(null);
 
   function run(): void {
     if (confirm && !window.confirm(confirm)) return;
     startTransition(async () => {
-      const result = await action();
-      setError(result.ok ? null : (result.message ?? "Falhou."));
+      const next = await action();
+      setResult(next.ok ? next : { ok: false, message: next.message ?? "Falhou." });
     });
   }
 
@@ -47,9 +47,12 @@ export function ActionButton({
       >
         {children}
       </Button>
-      {error ? (
-        <span role="alert" className="text-danger mt-1 max-w-64 text-right text-xs">
-          {error}
+      {result?.message ? (
+        <span
+          role={result.ok ? "status" : "alert"}
+          className={`mt-1 max-w-64 text-right text-xs ${result.ok ? "text-success" : "text-danger"}`}
+        >
+          {result.message}
         </span>
       ) : null}
     </span>

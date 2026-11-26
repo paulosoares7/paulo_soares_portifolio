@@ -1,25 +1,33 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/forms/LoginForm";
+import { AuthCard } from "@/components/layout/AuthCard";
 import { getCurrentAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Entrar" };
 
+type Props = { searchParams: Promise<{ senha?: string }> };
+
 /** Página de login (RF22). Quem já está logado vai direto para o resumo. */
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: Props) {
   if (await getCurrentAdmin()) redirect("/");
+  const { senha } = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="rounded-card border-border bg-surface w-full max-w-sm border p-8">
-        <h1 className="text-2xl font-semibold">
-          Painel<span className="text-accent">.</span>
-        </h1>
-        <p className="text-muted mt-1 mb-6 text-sm">
-          Entre com seu e-mail e senha de administrador.
+    <AuthCard description="Entre com seu e-mail e senha de administrador.">
+      {senha === "alterada" ? (
+        <p role="status" className="text-success mb-4 text-sm">
+          Senha alterada. Entre com a nova senha.
         </p>
-        <LoginForm />
-      </div>
-    </main>
+      ) : null}
+      <LoginForm />
+      <Link
+        href="/esqueci-a-senha"
+        className="text-accent mt-6 block text-center text-sm hover:underline"
+      >
+        Esqueci a senha
+      </Link>
+    </AuthCard>
   );
 }

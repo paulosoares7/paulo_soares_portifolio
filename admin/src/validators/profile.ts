@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DEGREE_LEVELS, DEGREE_STATUSES, enumValues, SOCIAL_NETWORKS } from "@/lib/labels";
+import { DEGREE_LEVELS, DEGREE_STATUSES, enumValues, SOCIAL_NETWORK_OPTIONS } from "@/lib/labels";
 import {
   email,
   optionalDate,
@@ -41,16 +41,32 @@ export const highlightSchema = z.object({
 });
 
 /** Link de rede social. */
-export const socialLinkSchema = z.object({
-  id: optionalId,
-  network: z.enum(enumValues(SOCIAL_NETWORKS), { error: "Escolha a rede." }),
-  label: optionalText(60),
-  url: requiredText(255).refine(
-    (v) => /^(https?:\/\/|mailto:)\S+$/i.test(v),
-    "Use https://... ou mailto:...",
-  ),
-  isVisible: z.preprocess((v) => v === "on" || v === true, z.boolean()),
-});
+export const socialLinkSchema = z.preprocess(
+  // E-mail digitado sem "mailto:" ganha o prefixo.
+  (raw) => {
+    if (typeof raw !== "object" || raw === null) return raw;
+    const v = raw as Record<string, unknown>;
+    const url = typeof v.url === "string" ? v.url.trim() : v.url;
+    return v.network === "email" && typeof url === "string" && /^[^\s@:/]+@[^\s@]+$/.test(url)
+      ? { ...v, url: `mailto:${url}` }
+      : v;
+  },
+  z
+    .object({
+      id: optionalId,
+      network: z.enum(SOCIAL_NETWORK_OPTIONS, { error: "Escolha a rede." }),
+      label: optionalText(60),
+      url: requiredText(255),
+      isVisible: z.preprocess((v) => v === "on" || v === true, z.boolean()),
+    })
+    .refine(
+      (v) => (v.network === "email" ? /^mailto:\S+@\S+$/i : /^https?:\/\/\S+$/i).test(v.url),
+      {
+        path: ["url"],
+        message: "Use https://... (ou o e-mail, para a opção E-mail).",
+      },
+    ),
+);
 
 /** Formação acadêmica. */
 export const degreeSchema = z

@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { LogOut, UserX } from "lucide-react";
+import { KeyRound, LogOut, UserX } from "lucide-react";
 import { prisma } from "@portfolio/database";
-import { anonymizeStudent, endAllSessions, endSession } from "@/actions/students";
+import {
+  anonymizeStudent,
+  endAllSessions,
+  endSession,
+  sendPasswordResetLink,
+} from "@/actions/students";
 import { StudentForm } from "@/components/forms/StudentForm";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
@@ -11,7 +16,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Table, Td, Th } from "@/components/ui/Table";
 import { formatDateTime } from "@/lib/format";
-import { SUBSCRIPTION_STATUSES } from "@/lib/labels";
+import { signInMethodsLabel, SUBSCRIPTION_STATUSES } from "@/lib/labels";
 
 export const metadata: Metadata = { title: "Aluno" };
 
@@ -23,7 +28,10 @@ const EVENT_LABEL = {
   logout: "saiu",
 } as const;
 
-/** Aluno: dados, sessões, assinaturas, acessos e anonimização (RF29). */
+/**
+ * Aluno (RF29): dados, como entra, link de senha, sessões, assinaturas,
+ * acessos e anonimização.
+ */
 export default async function StudentPage({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
@@ -33,6 +41,7 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
     where: { id },
     include: {
       sessions: { orderBy: { createdAt: "desc" } },
+      accounts: { select: { providerId: true, createdAt: true } },
       subscriptions: {
         orderBy: { createdAt: "desc" },
         include: {
@@ -77,6 +86,44 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
           />
         </Card>
 
+        {anonymized ? null : (
+          <Card>
+            <CardTitle
+              actions={
+                <ActionButton
+                  action={sendPasswordResetLink.bind(null, student.id)}
+                  confirm={`Enviar para ${student.email} um link para criar ou trocar a senha?`}
+                  variant="secondary"
+                >
+                  <KeyRound className="size-4" aria-hidden /> Enviar link de senha
+                </ActionButton>
+              }
+            >
+              Acesso à plataforma
+            </CardTitle>
+            <dl className="grid gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-muted">Entra com</dt>
+                <dd>{signInMethodsLabel(student.accounts.map((a) => a.providerId))}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">E-mail</dt>
+                <dd>
+                  {student.emailVerified ? (
+                    <Badge tone="success">verificado</Badge>
+                  ) : (
+                    <Badge tone="warning">não verificado</Badge>
+                  )}
+                </dd>
+              </div>
+            </dl>
+            <p className="text-muted mt-3 text-xs">
+              O link vale por 1 hora e só uma vez. Serve também para o aluno de cortesia criar a
+              primeira senha. Ao salvar, o aluno sai de todos os aparelhos.
+            </p>
+          </Card>
+        )}
+
         <Card>
           <CardTitle
             actions={
@@ -120,11 +167,7 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
                       <Td>{formatDateTime(s.createdAt)}</Td>
                       <Td>{formatDateTime(s.expiresAt)}</Td>
                       <Td>
-                        {open ? (
-                          <Badge tone="success">aberta</Badge>
-                        ) : (
-                          <Badge>expirada</Badge>
-                        )}
+                        {open ? <Badge tone="success">aberta</Badge> : <Badge>expirada</Badge>}
                       </Td>
                       <Td className="text-right">
                         {open ? (
@@ -191,8 +234,9 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
           <Card className="border-danger/40">
             <CardTitle>Anonimizar (LGPD)</CardTitle>
             <p className="text-muted mb-3 text-sm">
-              A pedido do aluno: apaga nome, e-mail, foto e IPs, remove as formas de entrar e encerra as sessões.
-              Assinaturas e cobranças ficam como registro financeiro. Não dá para desfazer.
+              A pedido do aluno: apaga nome, e-mail, foto e IPs, remove as formas de entrar e
+              encerra as sessões. Assinaturas e cobranças ficam como registro financeiro. Não dá
+              para desfazer.
             </p>
             <ActionButton
               action={anonymizeStudent.bind(null, student.id)}

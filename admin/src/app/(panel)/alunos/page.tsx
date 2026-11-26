@@ -8,10 +8,14 @@ import { Input } from "@/components/ui/Field";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Table, Td, Th } from "@/components/ui/Table";
 import { formatDateTime } from "@/lib/format";
+import { signInMethodsLabel } from "@/lib/labels";
 
 export const metadata: Metadata = { title: "Alunos" };
 
-/** Alunos com e-mail verificado, sessões abertas e situação da assinatura (RF29). */
+/**
+ * Alunos (RF29): como entram, e-mail verificado, assinatura, disciplinas nas
+ * vagas e sessões abertas.
+ */
 export default async function StudentsPage({
   searchParams,
 }: {
@@ -30,8 +34,17 @@ export default async function StudentsPage({
           status: { in: ["active", "past_due", "canceled"] },
           currentPeriodEnd: { gt: now },
         },
-        select: { gateway: true, currentPeriodEnd: true },
+        orderBy: { currentPeriodEnd: "desc" },
+        select: {
+          gateway: true,
+          currentPeriodEnd: true,
+          courses: {
+            orderBy: { slotNumber: "asc" },
+            select: { slotNumber: true, course: { select: { title: true } } },
+          },
+        },
       },
+      accounts: { select: { providerId: true } },
     },
   });
   const openSessions = await prisma.studentSession.groupBy({
@@ -45,7 +58,7 @@ export default async function StudentsPage({
     <>
       <PageHeader
         title="Alunos"
-        description="E-mail verificado, sessões abertas e assinaturas de cada aluno."
+        description="Como cada aluno entra, e-mail verificado, assinatura, disciplinas e sessões abertas."
       />
       <form className="mb-4 flex gap-3" role="search">
         <Input
@@ -66,8 +79,10 @@ export default async function StudentsPage({
           <thead>
             <tr>
               <Th>Aluno</Th>
-              <Th>Acesso</Th>
+              <Th>Entra com</Th>
               <Th>E-mail</Th>
+              <Th>Assinatura</Th>
+              <Th>Disciplinas</Th>
               <Th>Sessões abertas</Th>
             </tr>
           </thead>
@@ -83,6 +98,14 @@ export default async function StudentsPage({
                     <p className="text-muted text-xs">{s.email}</p>
                     {s.isBlocked ? <Badge tone="danger">bloqueado</Badge> : null}
                   </Td>
+                  <Td>{signInMethodsLabel(s.accounts.map((a) => a.providerId))}</Td>
+                  <Td>
+                    {s.emailVerified ? (
+                      <Badge tone="success">verificado</Badge>
+                    ) : (
+                      <Badge tone="warning">não verificado</Badge>
+                    )}
+                  </Td>
                   <Td>
                     {subscription ? (
                       <>
@@ -97,12 +120,14 @@ export default async function StudentsPage({
                       <Badge>sem acesso</Badge>
                     )}
                   </Td>
-                  <Td>
-                    {s.emailVerified ? (
-                      <Badge tone="success">verificado</Badge>
-                    ) : (
-                      <Badge tone="warning">não verificado</Badge>
-                    )}
+                  <Td className="text-xs">
+                    {subscription?.courses.length
+                      ? subscription.courses.map((c) => (
+                          <p key={c.slotNumber}>
+                            {c.slotNumber}. {c.course.title}
+                          </p>
+                        ))
+                      : "—"}
                   </Td>
                   <Td>{sessionsByStudent.get(s.id) ?? 0}</Td>
                 </tr>

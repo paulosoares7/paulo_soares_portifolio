@@ -5,6 +5,7 @@ import { prisma } from "@portfolio/database";
 import { actionError } from "@/lib/action-error";
 import { requireAdmin } from "@/lib/auth";
 import { parseForm } from "@/lib/form";
+import { sendStudentResetLink } from "@/lib/student-auth";
 import type { ActionState } from "@/types/action";
 import { studentSchema } from "@/validators/subscription";
 
@@ -89,4 +90,36 @@ export async function anonymizeStudent(studentId: number): Promise<ActionState> 
   }
   revalidateStudents();
   return { ok: true, message: "Aluno anonimizado." };
+}
+
+/**
+ * Envia ao aluno o link para criar ou trocar a senha da plataforma (1 hora,
+ * uso único). Ao salvar a nova senha, as sessões dele são encerradas.
+ * @param studentId Aluno.
+ * @returns Resultado da ação.
+ */
+export async function sendPasswordResetLink(studentId: number): Promise<ActionState> {
+  await requireAdmin();
+  const student = await prisma.student.findUnique({
+    where: { id: studentId },
+    select: { email: true, isBlocked: true },
+  });
+  if (!student || student.email.endsWith("@anonimizado.invalid"))
+    return { ok: false, message: "Aluno não encontrado." };
+  if (student.isBlocked)
+    return { ok: false, message: "Desbloqueie o aluno antes de enviar o link." };
+  try {
+    const delivery = await sendStudentResetLink(student.email);
+    if (delivery === "unavailable")
+      return { ok: false, message: "E-mail não configurado (RESEND_API_KEY e MAIL_FROM)." };
+    return {
+      ok: true,
+      message:
+        delivery === "sent"
+          ? `Link enviado para ${student.email}.`
+          : "Resend não configurado: o link apareceu no terminal do painel.",
+    };
+  } catch (error) {
+    return actionError(error);
+  }
 }

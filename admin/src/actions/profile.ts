@@ -16,7 +16,13 @@ import {
   socialLinkSchema,
 } from "@/validators/profile";
 
-const PATH = "/perfil";
+// Página do painel de cada bloco (o perfil foi dividido em páginas no menu "Portfólio").
+const PATHS = {
+  profile: "/perfil",
+  social: "/redes-sociais",
+  career: "/formacao-e-atuacao",
+  research: "/areas-de-pesquisa",
+} as const;
 
 /**
  * Salva os dados do perfil (linha única id = 1).
@@ -37,7 +43,7 @@ export async function saveProfile(_state: ActionState, formData: FormData): Prom
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.profile);
   return { ok: true, message: "Perfil salvo." };
 }
 
@@ -61,7 +67,7 @@ export async function setProfileFile(
   } catch (error) {
     return actionError(error, "Salve os dados do perfil antes de enviar arquivos.");
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.profile);
   return { ok: true };
 }
 
@@ -86,7 +92,7 @@ export async function saveHighlight(_state: ActionState, formData: FormData): Pr
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.profile);
   return { ok: true, message: "Salvo." };
 }
 
@@ -98,7 +104,7 @@ export async function deleteHighlight(id: number): Promise<ActionState> {
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.profile);
   return { ok: true };
 }
 
@@ -112,7 +118,7 @@ export async function reorderHighlights(ids: number[]): Promise<ActionState> {
       prisma.profileHighlight.update({ where: { id: itemId }, data: { sortOrder: index + 1 } }),
     ),
   );
-  revalidatePath(PATH);
+  revalidatePath(PATHS.profile);
   return { ok: true };
 }
 
@@ -136,7 +142,7 @@ export async function saveSocialLink(
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.social);
   return { ok: true, message: "Salvo." };
 }
 
@@ -148,7 +154,24 @@ export async function deleteSocialLink(id: number): Promise<ActionState> {
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.social);
+  return { ok: true };
+}
+
+/**
+ * Mostra ou oculta um link de rede social no portfólio.
+ * @param id Link.
+ * @returns Resultado da ação.
+ */
+export async function toggleSocialLinkVisibility(id: number): Promise<ActionState> {
+  await requireAdmin();
+  try {
+    const link = await prisma.socialLink.findUniqueOrThrow({ where: { id } });
+    await prisma.socialLink.update({ where: { id }, data: { isVisible: !link.isVisible } });
+  } catch (error) {
+    return actionError(error);
+  }
+  revalidatePath(PATHS.social);
   return { ok: true };
 }
 
@@ -162,7 +185,7 @@ export async function reorderSocialLinks(ids: number[]): Promise<ActionState> {
       prisma.socialLink.update({ where: { id: itemId }, data: { sortOrder: index + 1 } }),
     ),
   );
-  revalidatePath(PATH);
+  revalidatePath(PATHS.social);
   return { ok: true };
 }
 
@@ -183,7 +206,7 @@ export async function saveDegree(_state: ActionState, formData: FormData): Promi
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.career);
   return { ok: true, message: "Salvo." };
 }
 
@@ -195,7 +218,7 @@ export async function deleteDegree(id: number): Promise<ActionState> {
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.career);
   return { ok: true };
 }
 
@@ -209,7 +232,7 @@ export async function reorderDegrees(ids: number[]): Promise<ActionState> {
       prisma.academicDegree.update({ where: { id: itemId }, data: { sortOrder: index + 1 } }),
     ),
   );
-  revalidatePath(PATH);
+  revalidatePath(PATHS.career);
   return { ok: true };
 }
 
@@ -233,7 +256,7 @@ export async function saveExperience(
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.career);
   return { ok: true, message: "Salvo." };
 }
 
@@ -245,7 +268,7 @@ export async function deleteExperience(id: number): Promise<ActionState> {
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.career);
   return { ok: true };
 }
 
@@ -259,7 +282,7 @@ export async function reorderExperiences(ids: number[]): Promise<ActionState> {
       prisma.experience.update({ where: { id: itemId }, data: { sortOrder: index + 1 } }),
     ),
   );
-  revalidatePath(PATH);
+  revalidatePath(PATHS.career);
   return { ok: true };
 }
 
@@ -283,7 +306,7 @@ export async function saveResearchArea(
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.research);
   return { ok: true, message: "Salvo." };
 }
 
@@ -295,7 +318,7 @@ export async function deleteResearchArea(id: number): Promise<ActionState> {
   } catch (error) {
     return actionError(error);
   }
-  revalidatePath(PATH);
+  revalidatePath(PATHS.research);
   return { ok: true };
 }
 
@@ -309,6 +332,6 @@ export async function reorderResearchAreas(ids: number[]): Promise<ActionState> 
       prisma.researchArea.update({ where: { id: itemId }, data: { sortOrder: index + 1 } }),
     ),
   );
-  revalidatePath(PATH);
+  revalidatePath(PATHS.research);
   return { ok: true };
 }

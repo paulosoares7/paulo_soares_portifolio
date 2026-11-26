@@ -4,7 +4,7 @@ import { saveSocialLink } from "@/actions/profile";
 import { Checkbox, Field, Input, Select } from "@/components/ui/Field";
 import { FormFooter } from "@/components/ui/FormFooter";
 import { useCloseModal } from "@/components/ui/ModalTrigger";
-import { SOCIAL_NETWORKS } from "@/lib/labels";
+import { SOCIAL_NETWORK_OPTIONS, SOCIAL_NETWORKS } from "@/lib/labels";
 import { useFormAction } from "@/lib/use-form-action";
 import { socialLinkSchema } from "@/validators/profile";
 
@@ -23,6 +23,12 @@ export function SocialLinkForm({ item }: { item?: SocialLinkValues }) {
     onSuccess: close,
   });
 
+  // Link antigo de rede que não está mais na lista (ex.: YouTube).
+  const legacy =
+    item && !(SOCIAL_NETWORK_OPTIONS as readonly string[]).includes(item.network)
+      ? (SOCIAL_NETWORKS[item.network as keyof typeof SOCIAL_NETWORKS] ?? item.network)
+      : null;
+
   return (
     <form {...formProps} className="flex flex-col gap-4">
       <input type="hidden" name="id" value={item?.id ?? ""} />
@@ -30,20 +36,31 @@ export function SocialLinkForm({ item }: { item?: SocialLinkValues }) {
         <Select
           id="sl-network"
           name="network"
-          defaultValue={item?.network ?? ""}
+          defaultValue={item && !legacy ? item.network : ""}
           invalid={!!errors.network}
         >
           <option value="" disabled>
             Escolha...
           </option>
-          {Object.entries(SOCIAL_NETWORKS).map(([value, label]) => (
+          {SOCIAL_NETWORK_OPTIONS.map((value) => (
             <option key={value} value={value}>
-              {label}
+              {SOCIAL_NETWORKS[value]}
             </option>
           ))}
         </Select>
       </Field>
-      <Field label="Link" htmlFor="sl-url" error={errors.url} hint="https://... ou mailto:voce@...">
+      {legacy ? (
+        <p className="text-warning text-xs">
+          Este link é de uma rede que saiu da lista ({legacy}). Escolha uma das opções acima ou
+          remova o link.
+        </p>
+      ) : null}
+      <Field
+        label="Link"
+        htmlFor="sl-url"
+        error={errors.url}
+        hint="https://... ou, para E-mail, o endereço (voce@exemplo.com)"
+      >
         <Input id="sl-url" name="url" defaultValue={item?.url} invalid={!!errors.url} />
       </Field>
       <Field label="Texto alternativo (opcional)" htmlFor="sl-label" error={errors.label}>
