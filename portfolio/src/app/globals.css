@@ -1,0 +1,4 @@
+@import "tailwindcss";
+@import "@portfolio/ui/theme.css";
+
+/* Tema e componentes comuns em packages/ui. Estilos só do portfolio entram aqui. */

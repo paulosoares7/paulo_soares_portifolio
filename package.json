@@ -4,7 +4,9 @@
   "description": "Portfólio acadêmico + plataforma de aulas (monorepo com npm workspaces)",
   "workspaces": [
     "database",
+    "packages/ui",
     "admin",
+    "portfolio",
     "site"
   ],
   "scripts": {
@@ -12,6 +14,8 @@
     "db:up": "npm run db:up -w @portfolio/database",
     "db:down": "npm run db:down -w @portfolio/database",
     "admin:dev": "npm run dev -w @portfolio/admin",
+    "portfolio:dev": "npm run dev -w @portfolio/portfolio",
+    "plataforma:dev": "npm run dev -w @portfolio/plataforma",
     "site:dev": "npm run dev -w @portfolio/site"
   },
   "allowScripts": {
