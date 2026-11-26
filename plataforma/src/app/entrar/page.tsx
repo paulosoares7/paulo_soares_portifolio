@@ -1,30 +1,51 @@
 import type { Metadata } from "next";
-import { KeyRound } from "lucide-react";
-import { ButtonLink } from "@portfolio/ui/Button";
-import { Container, PageTitle } from "@portfolio/ui/Container";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { AuthCard, FormAlert } from "@/components/auth/AuthFields";
+import { GoogleButton, OrDivider } from "@/components/auth/GoogleButton";
+import { SignInForm } from "@/components/auth/SignInForm";
+import { getViewer } from "@/lib/access";
+import { isGoogleEnabled } from "@/lib/auth";
+import { safeNext } from "@/lib/safe-next";
 
 export const metadata: Metadata = { title: "Entrar", robots: { index: false } };
 
-/**
- * Entrar — versão provisória da fase 3. A entrada com o código
- * XXXX-XXXX-XXXX-XXXX e a minha área chegam na fase 4 (RF13–RF15).
- */
-export default function SignInPage() {
+type Props = { searchParams: Promise<{ next?: string; erro?: string }> };
+
+/** Entrar com Google ou com e-mail e senha; volta para ?next= depois. */
+export default async function SignInPage({ searchParams }: Props) {
+  const { next: rawNext, erro } = await searchParams;
+  const next = safeNext(rawNext);
+  if (await getViewer()) redirect(next);
+
   return (
-    <Container>
-      <PageTitle title="Minha" accent="área" />
-      <section className="rounded-card border-border bg-surface flex max-w-xl flex-col gap-4 border p-6 sm:p-8">
-        <KeyRound className="text-accent size-8" aria-hidden />
-        <p className="font-semibold">
-          A entrada com código de acesso abre junto com as assinaturas.
-        </p>
-        <p className="text-muted text-sm">
-          Até lá, as aulas grátis de cada disciplina estão abertas, sem cadastro.
-        </p>
-        <div>
-          <ButtonLink href="/aulas">Ver aulas</ButtonLink>
-        </div>
-      </section>
-    </Container>
+    <AuthCard
+      title="Entrar"
+      description="Acesse as suas disciplinas, atividades e o fórum."
+      footer={
+        <>
+          Ainda não tem conta?{" "}
+          <Link
+            href={`/cadastrar?next=${encodeURIComponent(next)}`}
+            className="text-accent font-medium hover:underline"
+          >
+            Criar conta
+          </Link>
+        </>
+      }
+    >
+      {erro ? (
+        <FormAlert tone="error">
+          Não foi possível entrar com o Google. Tente de novo ou use e-mail e senha.
+        </FormAlert>
+      ) : null}
+      {isGoogleEnabled ? (
+        <>
+          <GoogleButton next={next} />
+          <OrDivider />
+        </>
+      ) : null}
+      <SignInForm next={next} />
+    </AuthCard>
   );
 }

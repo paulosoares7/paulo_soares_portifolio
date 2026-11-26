@@ -8,6 +8,7 @@ import { VideoPlayer } from "@/components/player/VideoPlayer";
 import { Badge } from "@portfolio/ui/Badge";
 import { Container } from "@portfolio/ui/Container";
 import { Markdown } from "@portfolio/ui/Markdown";
+import { requireLoginForLocked } from "@/lib/access";
 import { getLessonPage } from "@/lib/lesson";
 
 type Props = { params: Promise<{ courseSlug: string; moduleSlug: string; lessonSlug: string }> };
@@ -26,12 +27,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /**
  * Página da aula (RF07): player grande, aulas do módulo ao lado, resumo,
  * texto de apoio, materiais e comentários. Só aula grátis (ou de assinante)
- * recebe o vídeo; as demais mostram o cadeado (RF08).
+ * recebe o vídeo; as demais mostram o cadeado (RF08). Visitante sem login
+ * numa aula paga vai para /entrar e volta para cá depois.
  */
 export default async function LessonPage({ params }: Props) {
   const { courseSlug, moduleSlug, lessonSlug } = await params;
   const data = await getLessonPage(courseSlug, moduleSlug, lessonSlug);
   if (!data) notFound();
+  await requireLoginForLocked(data.access, `/disciplina/${courseSlug}/${moduleSlug}/${lessonSlug}`);
   const {
     lesson,
     module,

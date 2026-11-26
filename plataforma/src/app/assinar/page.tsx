@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 };
 
 /**
- * Assinar — versão informativa da fase 3. O pagamento pelo Asaas, o código
- * de acesso e a escolha das disciplinas chegam na fase 4 (RF09–RF11).
+ * Assinar — versão informativa. O pagamento pelo Asaas e a escolha das
+ * disciplinas chegam na fase 4 (RF09–RF11).
  */
 export default async function SubscribePage() {
   const plan = await getActivePlan();

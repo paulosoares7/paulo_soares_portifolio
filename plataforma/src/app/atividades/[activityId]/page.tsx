@@ -7,6 +7,7 @@ import { Badge } from "@portfolio/ui/Badge";
 import { ButtonLink } from "@portfolio/ui/Button";
 import { Container } from "@portfolio/ui/Container";
 import { Markdown } from "@portfolio/ui/Markdown";
+import { requireLoginForLocked } from "@/lib/access";
 import { getActivityPage } from "@/lib/activity";
 import { plural } from "@/lib/format";
 import { DIFFICULTIES, DIFFICULTY_TONES } from "@/lib/labels";
@@ -21,14 +22,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Atividade (RF08): a grátis abre sem código e é corrigida no servidor; a
- * paga mostra só o cadeado (os enunciados nem são enviados).
+ * Atividade (RF08): a grátis abre sem assinatura e é corrigida no servidor;
+ * a paga mostra só o cadeado (os enunciados nem são enviados). Visitante sem
+ * login numa atividade paga vai para /entrar e volta para cá depois.
  */
 export default async function ActivityPage({ params }: Props) {
   const id = Number((await params).activityId);
   if (!Number.isInteger(id) || id <= 0) notFound();
   const activity = await getActivityPage(id);
   if (!activity) notFound();
+  await requireLoginForLocked(activity.access, `/atividades/${id}`);
   const { course } = activity.module;
   const locked = activity.access === "locked";
 

@@ -67,9 +67,12 @@ meio do pacote interno `@portfolio/database` (Prisma Client exportado por
 
 ## Segurança (obrigatório)
 
-- Senha do admin com bcrypt. Código de acesso, tokens de sessão: só SHA-256 no banco.
+- Senha do admin e dos alunos com bcrypt. Tokens do admin (sessão, redefinição)
+  só em SHA-256 no banco. Login dos alunos com Better Auth (Google ou e-mail e
+  senha): o cookie da sessão é assinado com HMAC (`BETTER_AUTH_SECRET`) e os
+  tokens de confirmação e de redefinição ficam só em hash.
 - Cookies `httpOnly`, `Secure`, `SameSite=Lax`.
-- Limite: 5 tentativas de código a cada 15 min por IP.
+- Limite: 5 erros de login a cada 15 min por IP e por e-mail.
 - Webhook do Asaas: validar o token do cabeçalho e **confirmar o pagamento na
   API do Asaas** antes de liberar acesso. Registrar o evento em
   `payment_events` (idempotência).
