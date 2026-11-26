@@ -8,7 +8,9 @@
 --   * Chave primária: id INT UNSIGNED AUTO_INCREMENT.
 --   * Datas em DATETIME(3) (milissegundos), padrão do Prisma.
 --   * Dinheiro em centavos (INT), nunca em FLOAT.
---   * Segredos (senhas, códigos, tokens) guardados só como hash.
+--   * Segredos (senhas, tokens) guardados só como hash. Exceção: o token
+--     da sessão do aluno, que o Better Auth guarda e o cookie leva assinado
+--     com HMAC (sem o segredo, o valor do banco não abre sessão).
 --   * Colunas usadas em CHECK não podem ter ON DELETE CASCADE/SET NULL
 --     (regra do MySQL). Nessas FKs vale o padrão RESTRICT: disciplinas e
 --     módulos são ARQUIVADOS (status), e alunos são ANONIMIZADOS (LGPD),
@@ -17,7 +19,7 @@
 -- Ordem dos blocos:
 --   1. Administração      2. Perfil e portfólio    3. Publicações
 --   4. Categorias, disciplinas e aulas              5. Vídeos e materiais
---   6. Atividades         7. Alunos e acesso       8. Assinaturas e pagamentos
+--   6. Atividades         7. Alunos e login        8. Assinaturas e pagamentos
 --   9. Progresso e logs  10. Fórum e avisos      11. Site
 --
 -- Modelo de venda: assinatura mensal (Asaas). O aluno escolhe até 3
@@ -61,6 +63,22 @@ CREATE TABLE admin_sessions (
   UNIQUE KEY uq_admin_sessions_token (token_hash),
   KEY ix_admin_sessions_user (admin_user_id),
   CONSTRAINT fk_admin_sessions_user FOREIGN KEY (admin_user_id)
+    REFERENCES admin_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- "Esqueci a senha" do painel. O e-mail leva o token; aqui só o SHA-256.
+-- Vale 1 hora e uma única vez (used_at preenchido no uso).
+CREATE TABLE admin_password_resets (
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  admin_user_id INT UNSIGNED NOT NULL,
+  token_hash    CHAR(64) NOT NULL COMMENT 'SHA-256 do token enviado por e-mail',
+  ip_address    VARCHAR(45) NULL,
+  created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  expires_at    DATETIME(3) NOT NULL,
+  used_at       DATETIME(3) NULL,
+  UNIQUE KEY uq_admin_password_resets_token (token_hash),
+  KEY ix_admin_password_resets_user (admin_user_id),
+  CONSTRAINT fk_admin_password_resets_user FOREIGN KEY (admin_user_id)
     REFERENCES admin_users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -119,7 +137,7 @@ CREATE TABLE profile_highlights (
 -- Links das redes sociais (apenas links, sem API).
 CREATE TABLE social_links (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  network    ENUM('instagram','linkedin','youtube','github','x','facebook','tiktok','whatsapp','email','other') NOT NULL,
+  network    ENUM('instagram','linkedin','youtube','github','x','facebook','tiktok','whatsapp','email','other','lattes') NOT NULL,
   label      VARCHAR(60) NULL,
   url        VARCHAR(255) NOT NULL,
   sort_order SMALLINT UNSIGNED NOT NULL DEFAULT 0,
@@ -306,7 +324,7 @@ CREATE TABLE lessons (
   title       VARCHAR(200) NOT NULL,
   summary     VARCHAR(400) NULL,
   content     TEXT NULL COMMENT 'Texto de apoio da aula (Markdown + LaTeX)',
-  is_preview  BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Aula gratuita (vídeo no YouTube), visível sem código',
+  is_preview  BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Aula gratuita (vídeo no YouTube), aberta sem assinatura',
   status      ENUM('draft','published') NOT NULL DEFAULT 'draft',
   sort_order  SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   created_at  DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -331,7 +349,7 @@ CREATE TABLE materials (
   description     VARCHAR(400) NULL,
   file_id         INT UNSIGNED NULL,
   external_url    VARCHAR(500) NULL,
-  is_preview      BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Visível sem código',
+  is_preview      BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Aberto sem assinatura',
   sort_order      SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   created_at      DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   CONSTRAINT ck_materials_one_owner CHECK (
@@ -393,52 +411,82 @@ CREATE TABLE question_options (
 ) ENGINE=InnoDB;
 
 -- =====================================================================
--- 7. ALUNOS E ACESSO POR CÓDIGO
+-- 7. ALUNOS E LOGIN (Better Auth na plataforma)
+--    O aluno entra com Google e/ou e-mail e senha. Mesmo e-mail = mesma
+--    conta. Os nomes das colunas seguem o que o Better Auth espera.
 -- =====================================================================
 
--- Aluno: identificado pelo e-mail informado na compra.
+-- Aluno. A cortesia é uma assinatura com gateway 'manual'.
 CREATE TABLE students (
-  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  name         VARCHAR(150) NOT NULL,
-  display_name VARCHAR(60)  NOT NULL COMMENT 'Nome mostrado no fórum',
-  email        VARCHAR(190) NOT NULL,
-  is_blocked   BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at   DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  updated_at   DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name           VARCHAR(150) NOT NULL,
+  display_name   VARCHAR(60)  NOT NULL COMMENT 'Nome mostrado no fórum',
+  email          VARCHAR(190) NOT NULL,
+  email_verified BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Link de confirmação ou login com Google',
+  image          VARCHAR(500) NULL COMMENT 'Foto (vem do Google)',
+  is_blocked     BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at     DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at     DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   UNIQUE KEY uq_students_email (email)
 ) ENGINE=InnoDB;
 
--- Código de acesso. O código em texto aparece UMA vez (e-mail e tela de
--- confirmação); o banco guarda só o SHA-256 dele.
-CREATE TABLE access_codes (
-  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  student_id   INT UNSIGNED NOT NULL,
-  code_hash    CHAR(64) NOT NULL COMMENT 'SHA-256 do código normalizado (sem hífens, maiúsculo)',
-  code_hint    CHAR(4)  NOT NULL COMMENT 'Últimos 4 caracteres, para o suporte identificar',
-  status       ENUM('active','suspended','revoked') NOT NULL DEFAULT 'active',
-  max_devices  TINYINT UNSIGNED NOT NULL DEFAULT 2,
-  created_at   DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  last_used_at DATETIME(3) NULL,
-  UNIQUE KEY uq_access_codes_hash (code_hash),
-  KEY ix_access_codes_student (student_id),
-  CONSTRAINT fk_access_codes_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+-- Formas de entrar: 'google' ou 'credential' (e-mail e senha).
+-- O hash bcrypt da senha fica aqui, só na linha 'credential'.
+CREATE TABLE student_accounts (
+  id                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  student_id               INT UNSIGNED NOT NULL,
+  provider_id              VARCHAR(50)  NOT NULL COMMENT 'google | credential',
+  account_id               VARCHAR(255) NOT NULL COMMENT 'ID no provedor (credential: o ID do aluno)',
+  access_token             TEXT NULL,
+  refresh_token            TEXT NULL,
+  id_token                 TEXT NULL,
+  access_token_expires_at  DATETIME(3) NULL,
+  refresh_token_expires_at DATETIME(3) NULL,
+  scope                    VARCHAR(500) NULL,
+  password                 VARCHAR(100) NULL COMMENT 'Hash bcrypt (vazio para quem só usa Google)',
+  created_at               DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at               DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uq_student_accounts_provider (provider_id, account_id),
+  KEY ix_student_accounts_student (student_id),
+  CONSTRAINT fk_student_accounts_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- Sessões abertas com um código (uma por dispositivo).
+-- Sessões do aluno (no máximo 2; ao abrir a 3ª, a mais antiga é apagada).
+-- O cookie leva o token assinado com HMAC (BETTER_AUTH_SECRET).
 CREATE TABLE student_sessions (
-  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  access_code_id INT UNSIGNED NOT NULL,
-  token_hash     CHAR(64) NOT NULL,
-  device_label   VARCHAR(100) NULL COMMENT 'Ex.: Chrome no Windows',
-  ip_address     VARCHAR(45) NULL,
-  user_agent     VARCHAR(255) NULL,
-  created_at     DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  last_seen_at   DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  expires_at     DATETIME(3) NOT NULL,
-  revoked_at     DATETIME(3) NULL,
-  UNIQUE KEY uq_student_sessions_token (token_hash),
-  KEY ix_student_sessions_code (access_code_id, revoked_at),
-  CONSTRAINT fk_student_sessions_code FOREIGN KEY (access_code_id) REFERENCES access_codes(id) ON DELETE CASCADE
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  student_id INT UNSIGNED NOT NULL,
+  token      VARCHAR(64) NOT NULL,
+  ip_address VARCHAR(45) NULL,
+  user_agent VARCHAR(255) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  expires_at DATETIME(3) NOT NULL,
+  UNIQUE KEY uq_student_sessions_token (token),
+  KEY ix_student_sessions_student (student_id, created_at),
+  CONSTRAINT fk_student_sessions_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Tokens de redefinição de senha do aluno. identifier guarda só o SHA-256
+-- do token; validade de 1 hora; a linha é apagada no uso.
+CREATE TABLE auth_verifications (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  identifier VARCHAR(255) NOT NULL,
+  value      TEXT NOT NULL,
+  expires_at DATETIME(3) NOT NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  KEY ix_auth_verifications_identifier (identifier)
+) ENGINE=InnoDB;
+
+-- Contador de tentativas de login (por IP e por e-mail). No banco porque
+-- na Vercel cada instância tem a sua própria memória.
+CREATE TABLE auth_rate_limits (
+  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `key`        VARCHAR(255) NOT NULL COMMENT 'Ex.: IP + rota ou email:...',
+  `count`      INT UNSIGNED NOT NULL,
+  last_request BIGINT NOT NULL COMMENT 'Milissegundos desde 1970',
+  UNIQUE KEY uq_auth_rate_limits_key (`key`)
 ) ENGINE=InnoDB;
 
 -- =====================================================================
@@ -596,18 +644,18 @@ CREATE TABLE attempt_answers (
   CONSTRAINT fk_answers_option   FOREIGN KEY (selected_option_id) REFERENCES question_options(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- Log de acessos ao conteúdo pago (ajuda a detectar código compartilhado).
+-- Log de acessos ao conteúdo pago (ajuda a detectar conta compartilhada).
 CREATE TABLE access_logs (
   id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  access_code_id INT UNSIGNED NOT NULL,
+  student_id     INT UNSIGNED NOT NULL,
   session_id     INT UNSIGNED NULL,
   event          ENUM('login','login_denied','play','material_view','logout') NOT NULL,
   lesson_id      INT UNSIGNED NULL,
   material_id    INT UNSIGNED NULL,
   ip_address     VARCHAR(45) NULL,
   created_at     DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  KEY ix_access_logs_code_time (access_code_id, created_at),
-  CONSTRAINT fk_access_logs_code    FOREIGN KEY (access_code_id) REFERENCES access_codes(id) ON DELETE CASCADE,
+  KEY ix_access_logs_student_time (student_id, created_at),
+  CONSTRAINT fk_access_logs_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   CONSTRAINT fk_access_logs_session FOREIGN KEY (session_id) REFERENCES student_sessions(id) ON DELETE SET NULL,
   CONSTRAINT fk_access_logs_lesson  FOREIGN KEY (lesson_id)  REFERENCES lessons(id)  ON DELETE SET NULL,
   CONSTRAINT fk_access_logs_material FOREIGN KEY (material_id) REFERENCES materials(id) ON DELETE SET NULL

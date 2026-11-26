@@ -1,6 +1,6 @@
 # 04 — Banco de dados (MySQL)
 
-O banco tem **39 tabelas** em 11 blocos e uma visão. Os scripts ficam em
+O banco tem **42 tabelas** em 11 blocos e uma visão. Os scripts ficam em
 `database/sql/`:
 
 | Arquivo | Conteúdo |
@@ -26,8 +26,8 @@ erDiagram
     modules ||--o{ activities : tem
     activities ||--o{ activity_questions : tem
     activity_questions ||--o{ question_options : tem
-    students ||--o{ access_codes : recebe
-    access_codes ||--o{ student_sessions : abre
+    students ||--o{ student_accounts : "entra com"
+    students ||--o{ student_sessions : "abre (máx. 2)"
     students ||--o{ subscriptions : assina
     plans ||--o{ subscriptions : define
     subscriptions ||--o{ subscription_courses : "até 3 vagas"
@@ -78,7 +78,8 @@ ainda está no futuro.
 | Vídeo Bunny | 1 vídeo em processamento com ID fictício |
 | Aulas sem vídeo | 7, exibidas como "vídeo em breve" |
 | Plano | Assinatura mensal, R$ 19,90, até 3 disciplinas |
-| Aluno demo | Código `FIS1-DEMO-2026-TEST`, assinatura de cortesia com Física I na vaga 1 |
+| Aluno demo | `aluno.demo@exemplo.com` / senha de teste `AlunoDemo2026` (e-mail já verificado), assinatura de cortesia com Física I na vaga 1 |
+| Redes sociais | LinkedIn, Currículo Lattes, Instagram, Facebook, GitHub e E-mail, com links genéricos |
 | Fórum | 1 aviso fixado (visível) e 1 dúvida de aluno (aguardando aprovação) |
 | Lattes e ORCID | Genéricos, para preencher no painel |
 
@@ -113,6 +114,20 @@ Gerado a partir do banco criado pelo `001_schema.sql`.
 | `created_at` | datetime(3) | não |  |  |
 | `expires_at` | datetime(3) | não |  |  |
 | `revoked_at` | datetime(3) | sim |  |  |
+
+#### `admin_password_resets`
+
+"Esqueci a senha" do painel: validade de 1 hora e uso único.
+
+| Coluna | Tipo | Nulo | Chave | Observação |
+| --- | --- | --- | --- | --- |
+| `id` | int(10) unsigned | não | PK |  |
+| `admin_user_id` | int(10) unsigned | não | índice FK → `admin_users` |  |
+| `token_hash` | char(64) | não | único | SHA-256 do token enviado por e-mail |
+| `ip_address` | varchar(45) | sim |  |  |
+| `created_at` | datetime(3) | não |  |  |
+| `expires_at` | datetime(3) | não |  |  |
+| `used_at` | datetime(3) | sim |  | Preenchido no uso (uso único) |
 
 #### `media_files`
 
@@ -165,7 +180,7 @@ Gerado a partir do banco criado pelo `001_schema.sql`.
 | Coluna | Tipo | Nulo | Chave | Observação |
 | --- | --- | --- | --- | --- |
 | `id` | int(10) unsigned | não | PK |  |
-| `network` | enum('instagram','linkedin','youtube','github','x','facebook','tiktok','whatsapp','email','other') | não |  |  |
+| `network` | enum('instagram','linkedin','youtube','github','x','facebook','tiktok','whatsapp','email','other','lattes') | não |  | O painel oferece LinkedIn, Lattes, Instagram, Facebook, GitHub e E-mail |
 | `label` | varchar(60) | sim |  |  |
 | `url` | varchar(255) | não |  |  |
 | `sort_order` | smallint(5) unsigned | não |  |  |
@@ -402,7 +417,10 @@ Gerado a partir do banco criado pelo `001_schema.sql`.
 | `feedback` | varchar(500) | sim |  | Por que esta alternativa está certa ou errada |
 | `sort_order` | smallint(5) unsigned | não |  |  |
 
-### 7. Alunos e acesso
+### 7. Alunos e login
+
+O aluno entra pela plataforma com Google e/ou e-mail e senha (Better Auth).
+Mesmo e-mail = mesma conta. A cortesia é uma assinatura com gateway `manual`.
 
 #### `students`
 
@@ -412,37 +430,71 @@ Gerado a partir do banco criado pelo `001_schema.sql`.
 | `name` | varchar(150) | não |  |  |
 | `display_name` | varchar(60) | não |  | Nome mostrado no fórum |
 | `email` | varchar(190) | não | único |  |
+| `email_verified` | tinyint(1) | não |  | Link de confirmação ou login com Google |
+| `image` | varchar(500) | sim |  | Foto (vem do Google) |
 | `is_blocked` | tinyint(1) | não |  |  |
 | `created_at` | datetime(3) | não |  |  |
 | `updated_at` | datetime(3) | não |  |  |
 
-#### `access_codes`
+#### `student_accounts`
+
+Formas de entrar. Quem usa só o Google não tem linha `credential`.
 
 | Coluna | Tipo | Nulo | Chave | Observação |
 | --- | --- | --- | --- | --- |
 | `id` | int(10) unsigned | não | PK |  |
 | `student_id` | int(10) unsigned | não | índice FK → `students` |  |
-| `code_hash` | char(64) | não | único | SHA-256 do código normalizado (sem hífens, maiúsculo) |
-| `code_hint` | char(4) | não |  | Últimos 4 caracteres, para o suporte identificar |
-| `status` | enum('active','suspended','revoked') | não |  |  |
-| `max_devices` | tinyint(3) unsigned | não |  |  |
+| `provider_id` | varchar(50) | não | único (com `account_id`) | `google` ou `credential` |
+| `account_id` | varchar(255) | não | único (com `provider_id`) | ID no provedor (no `credential`, o ID do aluno) |
+| `access_token` | text | sim |  | Token do Google |
+| `refresh_token` | text | sim |  | Token do Google |
+| `id_token` | text | sim |  | Token do Google |
+| `access_token_expires_at` | datetime(3) | sim |  |  |
+| `refresh_token_expires_at` | datetime(3) | sim |  |  |
+| `scope` | varchar(500) | sim |  |  |
+| `password` | varchar(100) | sim |  | Hash bcrypt (só no `credential`) |
 | `created_at` | datetime(3) | não |  |  |
-| `last_used_at` | datetime(3) | sim |  |  |
+| `updated_at` | datetime(3) | não |  |  |
 
 #### `student_sessions`
+
+No máximo 2 por aluno: ao abrir a 3ª, a mais antiga é apagada (regra na
+plataforma). O cookie leva o token assinado com HMAC (`BETTER_AUTH_SECRET`).
 
 | Coluna | Tipo | Nulo | Chave | Observação |
 | --- | --- | --- | --- | --- |
 | `id` | int(10) unsigned | não | PK |  |
-| `access_code_id` | int(10) unsigned | não | índice FK → `access_codes` |  |
-| `token_hash` | char(64) | não | único |  |
-| `device_label` | varchar(100) | sim |  | Ex.: Chrome no Windows |
+| `student_id` | int(10) unsigned | não | índice FK → `students` |  |
+| `token` | varchar(64) | não | único |  |
 | `ip_address` | varchar(45) | sim |  |  |
 | `user_agent` | varchar(255) | sim |  |  |
 | `created_at` | datetime(3) | não |  |  |
-| `last_seen_at` | datetime(3) | não |  |  |
+| `updated_at` | datetime(3) | não |  |  |
 | `expires_at` | datetime(3) | não |  |  |
-| `revoked_at` | datetime(3) | sim |  |  |
+
+#### `auth_verifications`
+
+Tokens de redefinição de senha do aluno: validade de 1 hora, apagados no uso.
+
+| Coluna | Tipo | Nulo | Chave | Observação |
+| --- | --- | --- | --- | --- |
+| `id` | int(10) unsigned | não | PK |  |
+| `identifier` | varchar(255) | não | índice | SHA-256 do token |
+| `value` | text | não |  | ID do aluno |
+| `expires_at` | datetime(3) | não |  |  |
+| `created_at` | datetime(3) | não |  |  |
+| `updated_at` | datetime(3) | não |  |  |
+
+#### `auth_rate_limits`
+
+Tentativas de login por IP e por e-mail (5 a cada 15 minutos).
+
+| Coluna | Tipo | Nulo | Chave | Observação |
+| --- | --- | --- | --- | --- |
+| `id` | int(10) unsigned | não | PK |  |
+| `key` | varchar(255) | não | único | IP + rota ou `email:...` |
+| `count` | int(10) unsigned | não |  |  |
+| `last_request` | bigint(20) | não |  | Milissegundos desde 1970 |
 
 ### 8. Assinaturas e pagamentos
 
@@ -577,7 +629,7 @@ Gerado a partir do banco criado pelo `001_schema.sql`.
 | Coluna | Tipo | Nulo | Chave | Observação |
 | --- | --- | --- | --- | --- |
 | `id` | bigint(20) unsigned | não | PK |  |
-| `access_code_id` | int(10) unsigned | não | índice FK → `access_codes` |  |
+| `student_id` | int(10) unsigned | não | índice FK → `students` |  |
 | `session_id` | int(10) unsigned | sim | índice FK → `student_sessions` |  |
 | `event` | enum('login','login_denied','play','material_view','logout') | não |  |  |
 | `lesson_id` | int(10) unsigned | sim | índice FK → `lessons` |  |

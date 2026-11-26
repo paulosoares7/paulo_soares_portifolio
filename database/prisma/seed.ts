@@ -7,17 +7,14 @@
 // Rodar: npm run seed   (só popula um banco vazio; não duplica dados)
 // =====================================================================
 import "dotenv/config";
-import { createHash } from "node:crypto";
 import { prisma } from "../src/index";
 
 /**
- * Gera o SHA-256 (hex) de um texto, igual ao SHA2(texto, 256) do MySQL.
- * @param value Texto de entrada.
- * @returns Hash com 64 caracteres hexadecimais.
+ * Hash bcrypt (custo 12) da senha de teste do aluno de demonstração:
+ * AlunoDemo2026. Fixo para ser igual ao do sql/002_seed.sql.
+ * Só para desenvolvimento: nunca rode o seed em produção.
  */
-function sha256(value: string): string {
-  return createHash("sha256").update(value).digest("hex");
-}
+const DEMO_STUDENT_PASSWORD_HASH = "$2b$12$w8eGovXtvzwwJ1WlRpgQ5./4JGzA.yNoqwELO2xMX13M0sm.X30zG";
 
 /** Insere todos os dados de exemplo numa única transação. */
 async function main(): Promise<void> {
@@ -70,22 +67,14 @@ async function main(): Promise<void> {
     });
 
     await tx.socialLink.createMany({
+      // Links genéricos [EXEMPLO]: troque pelos seus em Redes sociais no painel.
       data: [
-        {
-          network: "instagram",
-          url: "https://instagram.com/[usuario]",
-          sortOrder: 1,
-        },
-        {
-          network: "linkedin",
-          url: "https://linkedin.com/in/[usuario]",
-          sortOrder: 2,
-        },
-        {
-          network: "youtube",
-          url: "https://youtube.com/@[canal]",
-          sortOrder: 3,
-        },
+        { network: "linkedin", url: "https://www.linkedin.com/in/seu-usuario", sortOrder: 1 },
+        { network: "lattes", url: "http://lattes.cnpq.br/0000000000000000", sortOrder: 2 },
+        { network: "instagram", url: "https://www.instagram.com/seu-usuario", sortOrder: 3 },
+        { network: "facebook", url: "https://www.facebook.com/seu-usuario", sortOrder: 4 },
+        { network: "github", url: "https://github.com/seu-usuario", sortOrder: 5 },
+        { network: "email", url: "mailto:contato@exemplo.com", sortOrder: 6 },
       ],
     });
 
@@ -545,7 +534,8 @@ async function main(): Promise<void> {
 
     // -----------------------------------------------------------------
     // Aluno de demonstração com assinatura de cortesia (gateway manual).
-    // Código: FIS1-DEMO-2026-TEST (guardado só como SHA-256, sem hífens).
+    // Entra com e-mail e senha: aluno.demo@exemplo.com / AlunoDemo2026.
+    // E-mail já verificado; a senha fica em student_accounts ('credential').
     // -----------------------------------------------------------------
     await tx.student.create({
       data: {
@@ -553,15 +543,17 @@ async function main(): Promise<void> {
         name: "Aluno Demonstração",
         displayName: "Aluno Demo",
         email: "aluno.demo@exemplo.com",
+        emailVerified: true,
       },
     });
 
-    await tx.accessCode.create({
+    await tx.studentAccount.create({
       data: {
-        id: 1,
         studentId: 1,
-        codeHash: sha256("FIS1DEMO2026TEST"),
-        codeHint: "TEST",
+        providerId: "credential",
+        // No 'credential' o Better Auth usa o próprio ID do aluno.
+        accountId: "1",
+        password: DEMO_STUDENT_PASSWORD_HASH,
       },
     });
 

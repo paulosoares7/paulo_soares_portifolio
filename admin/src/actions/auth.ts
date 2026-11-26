@@ -9,7 +9,7 @@ import { hitRateLimit, resetRateLimit } from "@/lib/rate-limit";
 import type { ActionState } from "@/types/action";
 import { loginSchema } from "@/validators/auth";
 
-// Mesmo limite do código de acesso (CLAUDE.md): 5 tentativas a cada 15 min por IP.
+// Limite do CLAUDE.md: 5 tentativas a cada 15 min por IP.
 const LOGIN_LIMIT = 5;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 

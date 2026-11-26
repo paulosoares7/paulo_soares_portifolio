@@ -22,7 +22,7 @@ Médio, Ensino Superior e Concursos.
 | [01 — Decisões](docs/01-decisoes.md) | Pagamento, acesso, vídeo, anti-pirataria, Lattes/ORCID, hospedagem |
 | [02 — Requisitos](docs/02-requisitos.md) | Atores, requisitos funcionais e não funcionais, regras de negócio |
 | [03 — Arquitetura](docs/03-arquitetura.md) | Como os três projetos e os serviços externos se ligam |
-| [04 — Banco de dados](docs/04-banco-de-dados.md) | Dicionário das 39 tabelas |
+| [04 — Banco de dados](docs/04-banco-de-dados.md) | Dicionário das 42 tabelas |
 | [05 — Fluxos](docs/05-fluxos.md) | Assinatura, código de acesso, troca de disciplina, reprodução |
 | [06 — Interface](docs/06-interface.md) | Mapa de páginas, inspirações e tokens visuais |
 | [07 — Roadmap](docs/07-roadmap.md) | Fases e critérios para avançar |

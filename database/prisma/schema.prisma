@@ -39,6 +39,8 @@ enum SocialNetwork {
   whatsapp
   email
   other
+  /// Currículo Lattes (ícone próprio no site).
+  lattes
 }
 
 enum DegreeLevel {
@@ -150,12 +152,6 @@ enum QuestionType {
   open
 }
 
-enum AccessCodeStatus {
-  active
-  suspended
-  revoked
-}
-
 enum BillingCycle {
   monthly
   quarterly
@@ -246,11 +242,12 @@ model AdminUser {
   createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
 
-  sessions      AdminSession[]
-  uploadedFiles MediaFile[]
-  importJobs    ImportJob[]
-  forumThreads  ForumThread[]
-  forumPosts    ForumPost[]
+  sessions       AdminSession[]
+  passwordResets AdminPasswordReset[]
+  uploadedFiles  MediaFile[]
+  importJobs     ImportJob[]
+  forumThreads   ForumThread[]
+  forumPosts     ForumPost[]
 
   @@map("admin_users")
 }
@@ -271,6 +268,24 @@ model AdminSession {
 
   @@index([adminUserId], map: "ix_admin_sessions_user")
   @@map("admin_sessions")
+}
+
+/// Links de "esqueci a senha" do painel. O e-mail leva o token; aqui só o
+/// SHA-256. Vale 1 hora e uma única vez (used_at).
+model AdminPasswordReset {
+  id          Int       @id @default(autoincrement()) @db.UnsignedInt
+  adminUserId Int       @map("admin_user_id") @db.UnsignedInt
+  /// SHA-256 do token enviado por e-mail.
+  tokenHash   String    @unique(map: "uq_admin_password_resets_token") @map("token_hash") @db.Char(64)
+  ipAddress   String?   @map("ip_address") @db.VarChar(45)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  expiresAt   DateTime  @map("expires_at") @db.DateTime(3)
+  usedAt      DateTime? @map("used_at") @db.DateTime(3)
+
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_admin_password_resets_user")
+
+  @@index([adminUserId], map: "ix_admin_password_resets_user")
+  @@map("admin_password_resets")
 }
 
 /// Arquivos enviados pelo painel. O arquivo fica no storage; aqui só a referência.
@@ -500,13 +515,13 @@ model Course {
   createdAt        DateTime     @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
 
-  category            Category                    @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_courses_category")
-  coverFile           MediaFile?                  @relation(fields: [coverFileId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_courses_cover")
+  category            Category                   @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_courses_category")
+  coverFile           MediaFile?                 @relation(fields: [coverFileId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_courses_cover")
   modules             Module[]
   materials           Material[]
   subscriptionCourses SubscriptionCourse[]
-  changesFrom         SubscriptionCourseChange[]  @relation("CourseChangeFrom")
-  changesTo           SubscriptionCourseChange[]  @relation("CourseChangeTo")
+  changesFrom         SubscriptionCourseChange[] @relation("CourseChangeFrom")
+  changesTo           SubscriptionCourseChange[] @relation("CourseChangeTo")
   forumThreads        ForumThread[]
 
   @@index([categoryId], map: "ix_courses_category")
@@ -588,7 +603,7 @@ model Lesson {
   summary   String?       @db.VarChar(400)
   /// Texto de apoio da aula (Markdown + LaTeX).
   content   String?       @db.Text
-  /// Aula gratuita (vídeo no YouTube), visível sem código.
+  /// Aula gratuita (vídeo no YouTube), aberta sem assinatura.
   isPreview Boolean       @default(false) @map("is_preview")
   status    ContentStatus @default(draft)
   sortOrder Int           @default(0) @map("sort_order") @db.UnsignedSmallInt
@@ -619,7 +634,7 @@ model Material {
   description String?      @db.VarChar(400)
   fileId      Int?         @map("file_id") @db.UnsignedInt
   externalUrl String?      @map("external_url") @db.VarChar(500)
-  /// Visível sem código.
+  /// Aberto sem assinatura.
   isPreview   Boolean      @default(false) @map("is_preview")
   sortOrder   Int          @default(0) @map("sort_order") @db.UnsignedSmallInt
   createdAt   DateTime     @default(now()) @map("created_at") @db.DateTime(3)
@@ -711,21 +726,29 @@ model QuestionOption {
 }
 
 // =====================================================================
-// 7. ALUNOS E ACESSO POR CÓDIGO
+// 7. ALUNOS E LOGIN (Better Auth na plataforma)
+//    Google e/ou e-mail e senha. O hash da senha fica em student_accounts
+//    (provider_id = 'credential'), no formato que o Better Auth espera.
 // =====================================================================
 
-/// Aluno: identificado pelo e-mail informado na compra.
+/// Aluno. Mesmo e-mail = mesma conta, seja qual for a forma de entrar.
 model Student {
-  id          Int      @id @default(autoincrement()) @db.UnsignedInt
-  name        String   @db.VarChar(150)
+  id            Int      @id @default(autoincrement()) @db.UnsignedInt
+  name          String   @db.VarChar(150)
   /// Nome mostrado no fórum.
-  displayName String   @map("display_name") @db.VarChar(60)
-  email       String   @unique(map: "uq_students_email") @db.VarChar(190)
-  isBlocked   Boolean  @default(false) @map("is_blocked")
-  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  displayName   String   @map("display_name") @db.VarChar(60)
+  email         String   @unique(map: "uq_students_email") @db.VarChar(190)
+  /// true depois do link de confirmação ou do login com Google.
+  emailVerified Boolean  @default(false) @map("email_verified")
+  /// Foto (vem do Google).
+  image         String?  @db.VarChar(500)
+  isBlocked     Boolean  @default(false) @map("is_blocked")
+  createdAt     DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
 
-  accessCodes      AccessCode[]
+  accounts         StudentAccount[]
+  sessions         StudentSession[]
+  accessLogs       AccessLog[]
   subscriptions    Subscription[]
   lessonProgress   LessonProgress[]
   activityAttempts ActivityAttempt[]
@@ -736,46 +759,76 @@ model Student {
   @@map("students")
 }
 
-/// Código de acesso. O texto aparece uma vez; o banco guarda só o SHA-256.
-model AccessCode {
-  id         Int              @id @default(autoincrement()) @db.UnsignedInt
-  studentId  Int              @map("student_id") @db.UnsignedInt
-  /// SHA-256 do código normalizado (sem hífens, maiúsculo).
-  codeHash   String           @unique(map: "uq_access_codes_hash") @map("code_hash") @db.Char(64)
-  /// Últimos 4 caracteres, para o suporte identificar.
-  codeHint   String           @map("code_hint") @db.Char(4)
-  status     AccessCodeStatus @default(active)
-  maxDevices Int              @default(2) @map("max_devices") @db.UnsignedTinyInt
-  createdAt  DateTime         @default(now()) @map("created_at") @db.DateTime(3)
-  lastUsedAt DateTime?        @map("last_used_at") @db.DateTime(3)
+/// Formas de entrar do aluno: 'google' ou 'credential' (e-mail e senha).
+model StudentAccount {
+  id                    Int       @id @default(autoincrement()) @db.UnsignedInt
+  studentId             Int       @map("student_id") @db.UnsignedInt
+  /// 'google' ou 'credential'.
+  providerId            String    @map("provider_id") @db.VarChar(50)
+  /// ID no provedor (no 'credential', o próprio ID do aluno).
+  accountId             String    @map("account_id") @db.VarChar(255)
+  accessToken           String?   @map("access_token") @db.Text
+  refreshToken          String?   @map("refresh_token") @db.Text
+  idToken               String?   @map("id_token") @db.Text
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.DateTime(3)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.DateTime(3)
+  scope                 String?   @db.VarChar(500)
+  /// Hash bcrypt da senha (só no 'credential'; vazio para quem usa só o Google).
+  password              String?   @db.VarChar(100)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
 
-  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_access_codes_student")
-  sessions   StudentSession[]
-  accessLogs AccessLog[]
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_student_accounts_student")
 
-  @@index([studentId], map: "ix_access_codes_student")
-  @@map("access_codes")
+  @@unique([providerId, accountId], map: "uq_student_accounts_provider")
+  @@index([studentId], map: "ix_student_accounts_student")
+  @@map("student_accounts")
 }
 
-/// Sessões abertas com um código (uma por dispositivo).
+/// Sessões do aluno (no máximo 2; a mais antiga é encerrada).
+/// O cookie leva o token assinado com HMAC (BETTER_AUTH_SECRET).
 model StudentSession {
-  id           Int       @id @default(autoincrement()) @db.UnsignedInt
-  accessCodeId Int       @map("access_code_id") @db.UnsignedInt
-  tokenHash    String    @unique(map: "uq_student_sessions_token") @map("token_hash") @db.Char(64)
-  /// Ex.: Chrome no Windows.
-  deviceLabel  String?   @map("device_label") @db.VarChar(100)
-  ipAddress    String?   @map("ip_address") @db.VarChar(45)
-  userAgent    String?   @map("user_agent") @db.VarChar(255)
-  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
-  lastSeenAt   DateTime  @default(now()) @map("last_seen_at") @db.DateTime(3)
-  expiresAt    DateTime  @map("expires_at") @db.DateTime(3)
-  revokedAt    DateTime? @map("revoked_at") @db.DateTime(3)
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  studentId Int      @map("student_id") @db.UnsignedInt
+  token     String   @unique(map: "uq_student_sessions_token") @db.VarChar(64)
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  expiresAt DateTime @map("expires_at") @db.DateTime(3)
 
-  accessCode AccessCode  @relation(fields: [accessCodeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_student_sessions_code")
+  student    Student     @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_student_sessions_student")
   accessLogs AccessLog[]
 
-  @@index([accessCodeId, revokedAt], map: "ix_student_sessions_code")
+  @@index([studentId, createdAt], map: "ix_student_sessions_student")
   @@map("student_sessions")
+}
+
+/// Tokens de redefinição de senha do aluno.
+/// identifier guarda só o SHA-256 do token; a linha é apagada no uso.
+model AuthVerification {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  identifier String   @db.VarChar(255)
+  value      String   @db.Text
+  expiresAt  DateTime @map("expires_at") @db.DateTime(3)
+  createdAt  DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@index([identifier], map: "ix_auth_verifications_identifier")
+  @@map("auth_verifications")
+}
+
+/// Contador de tentativas (por IP e por e-mail). Fica no banco porque na
+/// Vercel cada instância tem a sua memória.
+model AuthRateLimit {
+  id          Int    @id @default(autoincrement()) @db.UnsignedInt
+  /// Ex.: "127.0.0.1/sign-in/email" ou "email:fulano@x.com".
+  key         String @unique(map: "uq_auth_rate_limits_key") @db.VarChar(255)
+  count       Int    @db.UnsignedInt
+  /// Momento da última tentativa (milissegundos desde 1970).
+  lastRequest BigInt @map("last_request")
+
+  @@map("auth_rate_limits")
 }
 
 // =====================================================================
@@ -979,23 +1032,23 @@ model AttemptAnswer {
   @@map("attempt_answers")
 }
 
-/// Log de acessos ao conteúdo pago (ajuda a detectar código compartilhado).
+/// Log de acessos ao conteúdo pago (ajuda a detectar conta compartilhada).
 model AccessLog {
-  id           BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
-  accessCodeId Int            @map("access_code_id") @db.UnsignedInt
-  sessionId    Int?           @map("session_id") @db.UnsignedInt
-  event        AccessLogEvent
-  lessonId     Int?           @map("lesson_id") @db.UnsignedInt
-  materialId   Int?           @map("material_id") @db.UnsignedInt
-  ipAddress    String?        @map("ip_address") @db.VarChar(45)
-  createdAt    DateTime       @default(now()) @map("created_at") @db.DateTime(3)
+  id         BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  studentId  Int            @map("student_id") @db.UnsignedInt
+  sessionId  Int?           @map("session_id") @db.UnsignedInt
+  event      AccessLogEvent
+  lessonId   Int?           @map("lesson_id") @db.UnsignedInt
+  materialId Int?           @map("material_id") @db.UnsignedInt
+  ipAddress  String?        @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.DateTime(3)
 
-  accessCode AccessCode      @relation(fields: [accessCodeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_access_logs_code")
-  session    StudentSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_access_logs_session")
-  lesson     Lesson?         @relation(fields: [lessonId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_access_logs_lesson")
-  material   Material?       @relation(fields: [materialId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_access_logs_material")
+  student  Student         @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_access_logs_student")
+  session  StudentSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_access_logs_session")
+  lesson   Lesson?         @relation(fields: [lessonId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_access_logs_lesson")
+  material Material?       @relation(fields: [materialId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_access_logs_material")
 
-  @@index([accessCodeId, createdAt], map: "ix_access_logs_code_time")
+  @@index([studentId, createdAt], map: "ix_access_logs_student_time")
   @@index([sessionId], map: "fk_access_logs_session")
   @@index([lessonId], map: "fk_access_logs_lesson")
   @@index([materialId], map: "fk_access_logs_material")

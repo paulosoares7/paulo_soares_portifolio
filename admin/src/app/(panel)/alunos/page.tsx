@@ -11,7 +11,7 @@ import { formatDateTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Alunos" };
 
-/** Alunos com código ativo, sessões abertas e situação da assinatura (RF29). */
+/** Alunos com e-mail verificado, sessões abertas e situação da assinatura (RF29). */
 export default async function StudentsPage({
   searchParams,
 }: {
@@ -25,10 +25,6 @@ export default async function StudentsPage({
     orderBy: { createdAt: "desc" },
     take: 200,
     include: {
-      accessCodes: {
-        where: { status: { not: "revoked" } },
-        select: { codeHint: true, status: true, lastUsedAt: true },
-      },
       subscriptions: {
         where: {
           status: { in: ["active", "past_due", "canceled"] },
@@ -39,27 +35,17 @@ export default async function StudentsPage({
     },
   });
   const openSessions = await prisma.studentSession.groupBy({
-    by: ["accessCodeId"],
-    where: { revokedAt: null, expiresAt: { gt: now } },
+    by: ["studentId"],
+    where: { expiresAt: { gt: now } },
     _count: { _all: true },
   });
-  const sessionsByCode = new Map(openSessions.map((s) => [s.accessCodeId, s._count._all]));
-  const codeIds = await prisma.accessCode.findMany({
-    where: { id: { in: [...sessionsByCode.keys()] } },
-    select: { id: true, studentId: true },
-  });
-  const sessionsByStudent = new Map<number, number>();
-  for (const c of codeIds)
-    sessionsByStudent.set(
-      c.studentId,
-      (sessionsByStudent.get(c.studentId) ?? 0) + (sessionsByCode.get(c.id) ?? 0),
-    );
+  const sessionsByStudent = new Map(openSessions.map((s) => [s.studentId, s._count._all]));
 
   return (
     <>
       <PageHeader
         title="Alunos"
-        description="Códigos de acesso, sessões abertas e assinaturas de cada aluno."
+        description="E-mail verificado, sessões abertas e assinaturas de cada aluno."
       />
       <form className="mb-4 flex gap-3" role="search">
         <Input
@@ -81,13 +67,12 @@ export default async function StudentsPage({
             <tr>
               <Th>Aluno</Th>
               <Th>Acesso</Th>
-              <Th>Código</Th>
+              <Th>E-mail</Th>
               <Th>Sessões abertas</Th>
             </tr>
           </thead>
           <tbody>
             {students.map((s) => {
-              const code = s.accessCodes[0];
               const subscription = s.subscriptions[0];
               return (
                 <tr key={s.id}>
@@ -113,18 +98,10 @@ export default async function StudentsPage({
                     )}
                   </Td>
                   <Td>
-                    {code ? (
-                      <>
-                        <span className="font-mono">••••-{code.codeHint}</span>{" "}
-                        {code.status === "suspended" ? (
-                          <Badge tone="warning">suspenso</Badge>
-                        ) : null}
-                        <p className="text-muted text-xs">
-                          último uso {formatDateTime(code.lastUsedAt)}
-                        </p>
-                      </>
+                    {s.emailVerified ? (
+                      <Badge tone="success">verificado</Badge>
                     ) : (
-                      <span className="text-muted text-xs">nenhum</span>
+                      <Badge tone="warning">não verificado</Badge>
                     )}
                   </Td>
                   <Td>{sessionsByStudent.get(s.id) ?? 0}</Td>

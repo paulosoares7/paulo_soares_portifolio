@@ -5,8 +5,9 @@ Atualizado em 25/11/2026.
 ## Resumo
 
 Assinatura mensal de **R$ 19,90** cobrada pelo **Asaas**, com até
-**3 disciplinas** por aluno e troca de uma disciplina por ciclo. O acesso é
-feito por **código** enviado por e-mail. Os vídeos pagos ficam no **Bunny
+**3 disciplinas** por aluno e troca de uma disciplina por ciclo. O aluno entra
+com **Google** ou com **e-mail e senha** (Better Auth). O portfólio e a
+plataforma de aulas são projetos separados. Os vídeos pagos ficam no **Bunny
 Stream** e as aulas grátis no **YouTube**. Os dois apps ficam na **Vercel**.
 
 ## Tabela de decisões
@@ -19,9 +20,9 @@ Stream** e as aulas grátis no **YouTube**. Os dois apps ficam na **Vercel**.
 | Modelo de cobrança | Assinatura mensal, renova até o aluno cancelar | Pedido do professor. Cancelada, o acesso vai até o fim do mês já pago. |
 | Vagas | Até **3 disciplinas** por assinatura (ex.: Física I, ESA, PSC 1) | Vagas vazias são preenchidas na hora. Trocar uma disciplina ocupada: **uma troca por ciclo**, agendada para valer na renovação. |
 | Catálogo | 4 seções: Vestibulares, Ensino Médio, Ensino Superior, Concursos | Tabela `categories`; cada disciplina pertence a uma seção. |
-| Aulas grátis | Até 3 itens por disciplina: 2 vídeos de conceito no **YouTube** + 1 atividade (ex.: MRU) | Funciona como degustação; não exige código. |
-| Login do aluno | Sem senha: **código aleatório** gerado após o 1º pagamento, enviado por e-mail; o banco guarda só o hash SHA-256 | O mesmo código vale para todas as disciplinas da assinatura. Recuperação pelo e-mail gera um código novo. |
-| Dispositivos | Até 2 sessões por código; a mais antiga cai | Dificulta compartilhar o código. |
+| Aulas grátis | Até 3 itens por disciplina: 2 vídeos de conceito no **YouTube** + 1 atividade (ex.: MRU) | Funciona como degustação; não exige assinatura. |
+| Login do aluno | **Google** ou **e-mail e senha** (Better Auth), com confirmação do e-mail e "esqueci a senha" (link de 1 h, uso único). Mesmo e-mail = mesma conta. Senha em bcrypt; token de redefinição só em SHA-256 | Decidido em 26/11/2026, substituindo o código de acesso. A cortesia é uma assinatura com gateway `manual`. O token da sessão fica no banco e o cookie o leva assinado com HMAC. |
+| Dispositivos | Até 2 sessões por aluno; a mais antiga cai | Dificulta compartilhar a conta. |
 | Anti-pirataria | URL de vídeo com token de 2 h, marca d'água com nome do aluno, player sem download, log de acessos, DRM opcional | Nenhum site impede 100% a gravação de tela (gravador do sistema ou celular apontado para o monitor). A marca d'água identifica quem vazou. |
 | Vídeos pagos | **Bunny Stream** (HLS, token, DRM básico MediaCage sem custo). O MySQL guarda só o registro do vídeo | Vídeo dentro do banco incha o MySQL e impede streaming adaptativo. Panda Video é a alternativa se a pirataria virar problema. |
 | Link alternativo | Toda aula aceita link externo: YouTube, Vimeo ou MP4 | Mecanismo pedido para quando não houver vídeo no provedor. |

@@ -11,6 +11,7 @@ export const SOCIAL_NETWORKS = {
   whatsapp: "WhatsApp",
   email: "E-mail",
   other: "Outro",
+  lattes: "Currículo Lattes",
 } as const;
 
 export const DEGREE_LEVELS = {
@@ -117,12 +118,6 @@ export const BILLING_CYCLES = {
   quarterly: "Trimestral",
   semiannual: "Semestral",
   yearly: "Anual",
-} as const;
-
-export const ACCESS_CODE_STATUSES = {
-  active: "Ativo",
-  suspended: "Suspenso",
-  revoked: "Revogado",
 } as const;
 
 export const THREAD_TYPES = {

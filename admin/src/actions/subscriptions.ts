@@ -6,8 +6,7 @@ import { actionError } from "@/lib/action-error";
 import { fetchSubscriptionPayments, isAsaasConfigured } from "@/lib/asaas";
 import { requireAdmin } from "@/lib/auth";
 import { parseForm } from "@/lib/form";
-import { issueAccessCode } from "@/lib/student-access";
-import type { ActionState, CodeActionState } from "@/types/action";
+import type { ActionState } from "@/types/action";
 import { courtesySchema, extendSchema, planSchema } from "@/validators/subscription";
 
 /** Atualiza as telas de assinaturas, alunos e o resumo. */
@@ -38,14 +37,13 @@ export async function savePlan(_state: ActionState, formData: FormData): Promise
  * disciplinas escolhidas nas vagas 1..3. Opcionalmente gera o código.
  */
 export async function createCourtesy(
-  _state: CodeActionState,
+  _state: ActionState,
   formData: FormData,
-): Promise<CodeActionState> {
+): Promise<ActionState> {
   await requireAdmin();
   const parsed = parseForm(courtesySchema, formData);
   if (!parsed.success) return parsed.state;
-  const { studentId, name, displayName, email, planId, courseIds, periodEnd, generateCode } =
-    parsed.data;
+  const { studentId, name, displayName, email, planId, courseIds, periodEnd } = parsed.data;
 
   const plan = await prisma.plan.findUnique({ where: { id: planId } });
   if (!plan) return { ok: false, fieldErrors: { planId: ["Plano não encontrado."] } };
@@ -109,9 +107,7 @@ export async function createCourtesy(
     });
 
     revalidateSubscriptions();
-    if (!generateCode) return { ok: true, message: "Cortesia criada." };
-    const issued = await issueAccessCode(subscription.studentId);
-    return { ok: true, message: "Cortesia criada.", code: issued.code, emailed: issued.emailed };
+    return { ok: true, message: `Cortesia criada (assinatura #${subscription.id}).` };
   } catch (error) {
     return actionError(error, "Não foi possível criar a cortesia.");
   }

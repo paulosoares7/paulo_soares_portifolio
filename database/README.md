@@ -12,7 +12,7 @@ const aulas = await prisma.lesson.findMany({ where: { status: "published" } });
 
 | Caminho | O que é |
 | --- | --- |
-| `sql/001_schema.sql` | **Especificação** da estrutura (39 tabelas + visão) |
+| `sql/001_schema.sql` | **Especificação** da estrutura (42 tabelas + visão) |
 | `sql/002_seed.sql` | Dados de exemplo de Física I em SQL puro |
 | `prisma/schema.prisma` | Schema Prisma equivalente ao `001_schema.sql` |
 | `prisma/migrations/` | Migrações versionadas (a inicial inclui CHECKs, `ON UPDATE` e a visão) |
@@ -100,8 +100,9 @@ na primeira subida do container.
 ## Seed
 
 `npm run seed` popula um banco **vazio** com os dados de Física I (3 módulos,
-7 temas, 11 aulas, 2 grátis), o plano mensal e o aluno demo com o código
-`FIS1-DEMO-2026-TEST`. Se o banco já tiver dados, o seed não faz nada.
+7 temas, 11 aulas, 2 grátis), o plano mensal, as redes sociais de exemplo e
+o aluno demo (`aluno.demo@exemplo.com`, senha de teste `AlunoDemo2026`). Se o
+banco já tiver dados, o seed não faz nada.
 
 ## Backup
 

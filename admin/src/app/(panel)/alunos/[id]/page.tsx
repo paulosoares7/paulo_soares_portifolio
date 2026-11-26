@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Ban, LogOut, Pause, Play, UserX } from "lucide-react";
+import { LogOut, UserX } from "lucide-react";
 import { prisma } from "@portfolio/database";
-import { anonymizeStudent, endAllSessions, endSession, setCodeStatus } from "@/actions/students";
-import { RegenerateCodeButton } from "@/components/forms/RegenerateCodeButton";
+import { anonymizeStudent, endAllSessions, endSession } from "@/actions/students";
 import { StudentForm } from "@/components/forms/StudentForm";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
@@ -12,11 +11,10 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Table, Td, Th } from "@/components/ui/Table";
 import { formatDateTime } from "@/lib/format";
-import { ACCESS_CODE_STATUSES, SUBSCRIPTION_STATUSES } from "@/lib/labels";
+import { SUBSCRIPTION_STATUSES } from "@/lib/labels";
 
 export const metadata: Metadata = { title: "Aluno" };
 
-const CODE_TONE = { active: "success", suspended: "warning", revoked: "neutral" } as const;
 const EVENT_LABEL = {
   login: "entrou",
   login_denied: "entrada negada",
@@ -25,7 +23,7 @@ const EVENT_LABEL = {
   logout: "saiu",
 } as const;
 
-/** Aluno: dados, códigos (suspender/revogar/gerar), sessões e anonimização (RF29). */
+/** Aluno: dados, sessões, assinaturas, acessos e anonimização (RF29). */
 export default async function StudentPage({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) notFound();
@@ -34,10 +32,7 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
   const student = await prisma.student.findUnique({
     where: { id },
     include: {
-      accessCodes: {
-        orderBy: { createdAt: "desc" },
-        include: { sessions: { orderBy: { createdAt: "desc" }, take: 20 } },
-      },
+      sessions: { orderBy: { createdAt: "desc" } },
       subscriptions: {
         orderBy: { createdAt: "desc" },
         include: {
@@ -51,16 +46,14 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
   });
   if (!student) notFound();
   const logs = await prisma.accessLog.findMany({
-    where: { accessCode: { studentId: id } },
+    where: { studentId: id },
     orderBy: { createdAt: "desc" },
     take: 20,
     include: { lesson: { select: { title: true } }, material: { select: { title: true } } },
   });
 
-  const sessions = student.accessCodes.flatMap((c) =>
-    c.sessions.map((s) => ({ ...s, hint: c.codeHint })),
-  );
-  const openSessions = sessions.filter((s) => !s.revokedAt && s.expiresAt > now);
+  const sessions = student.sessions;
+  const openSessions = sessions.filter((s) => s.expiresAt > now);
   const anonymized = student.email.endsWith("@anonimizado.invalid");
 
   return (
@@ -82,68 +75,6 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
               isBlocked: student.isBlocked,
             }}
           />
-        </Card>
-
-        <Card>
-          <CardTitle>Códigos de acesso</CardTitle>
-          <p className="text-muted mb-4 text-sm">
-            O banco guarda só o hash; aparecem os 4 últimos caracteres. Um código ativo por aluno
-            (RN01).
-          </p>
-          {student.accessCodes.length === 0 ? (
-            <EmptyState>Nenhum código.</EmptyState>
-          ) : (
-            <ul className="mb-4 flex flex-col gap-2">
-              {student.accessCodes.map((code) => (
-                <li
-                  key={code.id}
-                  className="rounded-btn border-border bg-surface-2 flex flex-wrap items-center justify-between gap-2 border p-3"
-                >
-                  <div>
-                    <p className="flex items-center gap-2">
-                      <span className="font-mono">••••-••••-••••-{code.codeHint}</span>
-                      <Badge tone={CODE_TONE[code.status]}>
-                        {ACCESS_CODE_STATUSES[code.status]}
-                      </Badge>
-                    </p>
-                    <p className="text-muted text-xs">
-                      Criado {formatDateTime(code.createdAt)} · último uso{" "}
-                      {formatDateTime(code.lastUsedAt)} · até {code.maxDevices} dispositivos
-                    </p>
-                  </div>
-                  {code.status !== "revoked" ? (
-                    <div className="flex gap-1">
-                      {code.status === "active" ? (
-                        <ActionButton
-                          action={setCodeStatus.bind(null, code.id, "suspended")}
-                          confirm="Suspender o código? As sessões abertas são encerradas."
-                          title="Suspender"
-                        >
-                          <Pause className="size-4" aria-hidden /> Suspender
-                        </ActionButton>
-                      ) : (
-                        <ActionButton
-                          action={setCodeStatus.bind(null, code.id, "active")}
-                          title="Reativar"
-                        >
-                          <Play className="size-4" aria-hidden /> Reativar
-                        </ActionButton>
-                      )}
-                      <ActionButton
-                        action={setCodeStatus.bind(null, code.id, "revoked")}
-                        confirm="Revogar o código? Não dá para desfazer."
-                        title="Revogar"
-                        variant="danger"
-                      >
-                        <Ban className="size-4" aria-hidden /> Revogar
-                      </ActionButton>
-                    </div>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-          {anonymized ? null : <RegenerateCodeButton studentId={student.id} />}
         </Card>
 
         <Card>
@@ -170,29 +101,29 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
                 <tr>
                   <Th>Dispositivo</Th>
                   <Th>Aberta em</Th>
-                  <Th>Última atividade</Th>
+                  <Th>Expira em</Th>
                   <Th>Situação</Th>
                   <Th className="text-right">Ação</Th>
                 </tr>
               </thead>
               <tbody>
                 {sessions.map((s) => {
-                  const open = !s.revokedAt && s.expiresAt > now;
+                  const open = s.expiresAt > now;
                   return (
                     <tr key={s.id}>
                       <Td>
-                        {s.deviceLabel ?? "Dispositivo"}
-                        <p className="text-muted text-xs">
-                          {s.ipAddress ?? "—"} · código ••••-{s.hint}
-                        </p>
+                        <span className="line-clamp-1" title={s.userAgent ?? undefined}>
+                          {s.userAgent || "Dispositivo"}
+                        </span>
+                        <p className="text-muted text-xs">IP {s.ipAddress || "—"}</p>
                       </Td>
                       <Td>{formatDateTime(s.createdAt)}</Td>
-                      <Td>{formatDateTime(s.lastSeenAt)}</Td>
+                      <Td>{formatDateTime(s.expiresAt)}</Td>
                       <Td>
                         {open ? (
                           <Badge tone="success">aberta</Badge>
                         ) : (
-                          <Badge>{s.revokedAt ? "encerrada" : "expirada"}</Badge>
+                          <Badge>expirada</Badge>
                         )}
                       </Td>
                       <Td className="text-right">
@@ -260,7 +191,7 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
           <Card className="border-danger/40">
             <CardTitle>Anonimizar (LGPD)</CardTitle>
             <p className="text-muted mb-3 text-sm">
-              A pedido do aluno: apaga nome, e-mail e IPs, revoga códigos e encerra sessões.
+              A pedido do aluno: apaga nome, e-mail, foto e IPs, remove as formas de entrar e encerra as sessões.
               Assinaturas e cobranças ficam como registro financeiro. Não dá para desfazer.
             </p>
             <ActionButton

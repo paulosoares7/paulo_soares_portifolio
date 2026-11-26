@@ -31,10 +31,14 @@ INSERT INTO profile_highlights (value, label, sort_order) VALUES
 ('20+', 'publicações [EXEMPLO]', 2),
 ('500+', 'alunos [EXEMPLO]', 3);
 
+-- Links genéricos [EXEMPLO]: troque pelos seus em Redes sociais no painel.
 INSERT INTO social_links (network, url, sort_order) VALUES
-('instagram', 'https://instagram.com/[usuario]', 1),
-('linkedin',  'https://linkedin.com/in/[usuario]', 2),
-('youtube',   'https://youtube.com/@[canal]', 3);
+('linkedin',  'https://www.linkedin.com/in/seu-usuario', 1),
+('lattes',    'http://lattes.cnpq.br/0000000000000000', 2),
+('instagram', 'https://www.instagram.com/seu-usuario', 3),
+('facebook',  'https://www.facebook.com/seu-usuario', 4),
+('github',    'https://github.com/seu-usuario', 5),
+('email',     'mailto:contato@exemplo.com', 6);
 
 INSERT INTO academic_degrees (level, course, institution, start_year, end_year, status, sort_order) VALUES
 ('masters', 'Mestrado em Ensino de Ciências e Matemática (PPGECIM)', 'Universidade Federal do Amazonas', 2025, NULL, 'in_progress', 1),
@@ -141,13 +145,14 @@ INSERT INTO plans (id, name, description, price_cents, billing_cycle, max_course
 
 -- ---------------------------------------------------------------------
 -- Aluno de demonstração com assinatura de cortesia (gateway manual)
--- Código: FIS1-DEMO-2026-TEST  (guardado só como SHA-256 sem hífens)
+-- Entra com e-mail e senha: aluno.demo@exemplo.com / AlunoDemo2026
 -- ---------------------------------------------------------------------
-INSERT INTO students (id, name, display_name, email) VALUES
-(1, 'Aluno Demonstração', 'Aluno Demo', 'aluno.demo@exemplo.com');
+INSERT INTO students (id, name, display_name, email, email_verified) VALUES
+(1, 'Aluno Demonstração', 'Aluno Demo', 'aluno.demo@exemplo.com', TRUE);
 
-INSERT INTO access_codes (id, student_id, code_hash, code_hint) VALUES
-(1, 1, SHA2('FIS1DEMO2026TEST', 256), 'TEST');
+-- Senha de teste AlunoDemo2026 (hash bcrypt, custo 12). Só desenvolvimento.
+INSERT INTO student_accounts (student_id, provider_id, account_id, password) VALUES
+(1, 'credential', '1', '$2b$12$w8eGovXtvzwwJ1WlRpgQ5./4JGzA.yNoqwELO2xMX13M0sm.X30zG');
 
 INSERT INTO subscriptions (id, student_id, plan_id, status, gateway, price_cents, current_period_start, current_period_end) VALUES
 (1, 1, 1, 'active', 'manual', 0, CURRENT_TIMESTAMP(3), DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 1 MONTH));

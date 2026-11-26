@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { createCourtesy } from "@/actions/subscriptions";
 import { Checkbox, Field, Input, Select } from "@/components/ui/Field";
-import { CodeReveal } from "@/components/ui/CodeReveal";
 import { FormFooter } from "@/components/ui/FormFooter";
 import { useFormAction } from "@/lib/use-form-action";
-import type { CodeActionState } from "@/types/action";
+import type { ActionState } from "@/types/action";
 import { courtesySchema } from "@/validators/subscription";
 
 type CourtesyFormProps = {
@@ -18,12 +17,13 @@ type CourtesyFormProps = {
 
 /**
  * Assinatura de cortesia (gateway = manual): aluno existente ou novo,
- * disciplinas nas vagas e data de fim. Pode gerar o código na hora.
+ * disciplinas nas vagas e data de fim. O aluno entra na plataforma com o
+ * Google ou cria a senha pelo link de redefinição, usando o mesmo e-mail.
  */
 export function CourtesyForm({ students, plans, courses, defaultEnd }: CourtesyFormProps) {
   const { formProps, state, pending, errors } = useFormAction<
     typeof courtesySchema,
-    CodeActionState
+    ActionState
   >(courtesySchema, createCourtesy, {
     resetOnSuccess: true,
   });
@@ -33,7 +33,6 @@ export function CourtesyForm({ students, plans, courses, defaultEnd }: CourtesyF
 
   return (
     <div className="flex flex-col gap-4">
-      {state.ok && state.code ? <CodeReveal code={state.code} emailed={state.emailed} /> : null}
       <form {...formProps} className="grid gap-4 md:grid-cols-2">
         <fieldset className="flex gap-4 text-sm md:col-span-2">
           <legend className="sr-only">Aluno</legend>
@@ -131,13 +130,10 @@ export function CourtesyForm({ students, plans, courses, defaultEnd }: CourtesyF
           {errors.courseIds ? <p className="text-danger text-xs">{errors.courseIds[0]}</p> : null}
         </fieldset>
 
-        <div className="md:col-span-2">
-          <Checkbox
-            name="generateCode"
-            defaultChecked
-            label="Gerar o código de acesso agora (revoga o código anterior do aluno)"
-          />
-        </div>
+        <p className="text-muted text-sm md:col-span-2">
+          O aluno entra na plataforma com o Google ou com e-mail e senha, usando este mesmo
+          e-mail. Para quem ainda não tem senha, envie o link de redefinição pela página do aluno.
+        </p>
         <div className="md:col-span-2">
           <FormFooter state={state} pending={pending} label="Criar cortesia" />
         </div>

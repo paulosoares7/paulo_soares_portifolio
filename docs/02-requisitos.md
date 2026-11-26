@@ -7,8 +7,8 @@ na v1 · **Could** = pode ficar para a v2.
 
 | Ator | Quem é | O que faz |
 | --- | --- | --- |
-| Visitante | Qualquer pessoa sem código | Vê portfólio, publicações, catálogo e as aulas grátis; assina |
-| Assinante | Aluno com assinatura vigente e código ativo | Assiste às aulas das suas até 3 disciplinas, faz atividades, posta no fórum |
+| Visitante | Qualquer pessoa sem assinatura (com ou sem conta) | Vê portfólio, publicações, catálogo e as aulas grátis; assina |
+| Assinante | Aluno logado com assinatura vigente | Assiste às aulas das suas até 3 disciplinas, faz atividades, posta no fórum |
 | Administrador | O professor (único) | Gerencia conteúdo, assinaturas, alunos e fórum |
 | Asaas | Sistema externo | Gera as cobranças mensais e avisa pagamentos por webhook |
 
@@ -30,13 +30,13 @@ na v1 · **Could** = pode ficar para a v2.
 | RF05 | Catálogo dividido em Vestibulares, Ensino Médio, Ensino Superior e Concursos, com cartões de disciplina (ícone, cor e, se assinante, progresso) | Must |
 | RF06 | Página da disciplina com abas **Aulas**, Atividades, Materiais e Fórum; aulas organizadas em módulos, temas e aulas | Must |
 | RF07 | Página da aula com player, resumo, materiais da aula e comentários; selo "vídeo em breve" quando a aula ainda não tem vídeo | Must |
-| RF08 | Aulas grátis (até 2 vídeos do YouTube + 1 atividade por disciplina) abertas sem código | Must |
+| RF08 | Aulas grátis (até 2 vídeos do YouTube + 1 atividade por disciplina) abertas sem assinatura | Must |
 | RF09 | Assinar: informar nome, e-mail e CPF, escolher Pix, Pix Automático ou cartão e pagar a 1ª mensalidade no Asaas | Must |
-| RF10 | Após a confirmação do 1º pagamento, gerar o código, enviá-lo por e-mail e mostrá-lo na tela de sucesso | Must |
+| RF10 | Após a confirmação do 1º pagamento, liberar as disciplinas na conta do aluno e avisar por e-mail | Must |
 | RF11 | Escolher até 3 disciplinas para a assinatura; vagas vazias são preenchidas na hora | Must |
 | RF12 | Agendar a troca de uma disciplina ocupada; a troca vale na renovação; só uma troca agendada por ciclo; pode cancelar o agendamento | Must |
-| RF13 | Entrar com o código (uma sessão por dispositivo, até 2) e sair | Must |
-| RF14 | Recuperar o acesso pelo e-mail: gera um código novo e revoga o antigo | Must |
+| RF13 | Criar conta e entrar com Google ou com e-mail e senha (confirmação do e-mail por link); até 2 sessões ativas; sair | Must |
+| RF14 | Esqueci a senha: link por e-mail válido por 1 hora e de uso único; ao redefinir, todas as sessões são encerradas | Must |
 | RF15 | Minha área: disciplinas da assinatura, próxima cobrança, link da fatura, troca agendada, progresso e "continuar de onde parou" | Must |
 | RF16 | Cancelar a assinatura pela minha área (acesso segue até o fim do período pago) | Must |
 | RF17 | Atividades com correção automática (múltipla escolha e numérica com tolerância), resolução conforme a regra da atividade e histórico de tentativas | Must |
@@ -56,7 +56,7 @@ na v1 · **Could** = pode ficar para a v2.
 | RF26 | Vídeos: envio direto ao Bunny com barra de progresso e status, ou cadastro de link (YouTube, Vimeo, MP4); vínculo com a aula | Must |
 | RF27 | Materiais: envio de PDF e marcação de "grátis" | Must |
 | RF28 | Atividades e questões com editor que aceita LaTeX, gabarito, tolerância, marcação de "grátis" e correção manual de questões abertas | Must |
-| RF29 | Plano e preço; lista de assinaturas e cobranças; assinatura de cortesia; suspensão e revogação de código; encerramento de sessões | Must |
+| RF29 | Plano e preço; lista de assinaturas e cobranças; assinatura de cortesia; encerramento de sessões e envio de link de redefinição de senha ao aluno | Must |
 | RF30 | Fila de aprovação do fórum, avisos e marcação de resposta oficial | Should |
 | RF31 | Caixa de mensagens de contato | Should |
 | RF32 | Resumo inicial: assinantes ativos, receita do mês, posts aguardando aprovação | Could |
@@ -73,7 +73,7 @@ na v1 · **Could** = pode ficar para a v2.
 | --- | --- |
 | RNF01 | Next.js (App Router), TypeScript strict e Tailwind; componentes por domínio; funções exportadas com JSDoc |
 | RNF02 | Responsivo (mobile first); nota mínima 90 no Lighthouse em desempenho e acessibilidade nas páginas públicas |
-| RNF03 | Segurança: segredos só em hash; cookies httpOnly/Secure/SameSite=Lax; 5 tentativas de código a cada 15 min por IP; Zod em toda entrada; webhook validado e pagamento confirmado na API do Asaas |
+| RNF03 | Segurança: segredos só em hash; cookies httpOnly/Secure/SameSite=Lax; 5 tentativas de login a cada 15 min por IP e por e-mail; Zod em toda entrada; webhook validado e pagamento confirmado na API do Asaas |
 | RNF04 | Conteúdo pago: token de vídeo de 2 h, marca d'água dinâmica, sem download de vídeo nem de PDF |
 | RNF05 | LGPD: política de privacidade, consentimento na assinatura e anonimização do aluno a pedido |
 | RNF06 | SEO: metadados, sitemap, páginas públicas renderizadas no servidor |
@@ -86,16 +86,16 @@ na v1 · **Could** = pode ficar para a v2.
 
 | ID | Regra |
 | --- | --- |
-| RN01 | Cada código pertence a um aluno (e-mail). O aluno tem um único código ativo por vez. |
-| RN02 | A assinatura começa `pending`. Com o 1º pagamento confirmado na API do Asaas, vira `active`, o período vai até a próxima data de cobrança, e o código é gerado e enviado. |
+| RN01 | Cada aluno tem uma conta por e-mail. Entrar com Google usando um e-mail já cadastrado vincula à mesma conta. Login com senha exige e-mail confirmado. |
+| RN02 | A assinatura começa `pending`. Com o 1º pagamento confirmado na API do Asaas, vira `active`, o período vai até a próxima data de cobrança, e as disciplinas são liberadas na conta do aluno. |
 | RN03 | A cada pagamento confirmado, `current_period_end` avança um ciclo. |
 | RN04 | Uma aula paga está acessível se a disciplina estiver numa vaga da assinatura e `current_period_end` estiver no futuro (visão `v_student_course_access`). |
 | RN05 | Cobrança vencida: a assinatura vira `past_due` e mantém o acesso até o fim do período pago; depois, `expired`. |
 | RN06 | Cancelamento: acesso até o fim do período pago, sem novas cobranças. Estorno encerra o acesso na hora. |
 | RN07 | No máximo 3 vagas (o banco garante). Vaga vazia: preenchida na hora. Vaga ocupada: uma troca por ciclo, agendada com `effective_at` = fim do período e aplicada na renovação. |
-| RN08 | Ao abrir uma 3ª sessão com o mesmo código, a sessão mais antiga é encerrada. |
+| RN08 | Ao abrir uma 3ª sessão na mesma conta, a sessão mais antiga é encerrada. |
 | RN09 | Cada evento do webhook é processado uma única vez (`payment_events`). |
-| RN10 | Grátis por disciplina: até 2 aulas com vídeo do YouTube + 1 atividade, abertas sem código. |
+| RN10 | Grátis por disciplina: até 2 aulas com vídeo do YouTube + 1 atividade, abertas sem assinatura. |
 | RN11 | Aula sem vídeo aparece com o selo "vídeo em breve" e mantém materiais e fórum. |
 | RN12 | PDF nunca é baixável. |
 | RN13 | Post de aluno entra como `pending` e só aparece após aprovação. Só assinantes da disciplina postam; visitantes leem os avisos. |

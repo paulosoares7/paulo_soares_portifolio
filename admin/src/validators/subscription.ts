@@ -44,7 +44,6 @@ export const courtesySchema = z
         .max(3, "No máximo 3 disciplinas."),
     ),
     periodEnd: futureDate,
-    generateCode: checkbox,
   })
   .superRefine((value, ctx) => {
     if (!value.studentId) {
