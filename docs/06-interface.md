@@ -43,7 +43,7 @@ adaptados ao tema escuro. As imagens estão em [`inspiracoes/`](inspiracoes/).
 | Resumo | Assinantes ativos, receita do mês, posts aguardando aprovação |
 | Perfil | Dados, foto, números, redes, formação, atuação, áreas |
 | Publicações | Lista, edição, importação (XML Lattes e ORCID) com prévia |
-| Categorias e disciplinas | Árvore categoria → disciplina → módulo → tema → aula, com arrastar para ordenar |
+| Categorias, grupos e disciplinas | Árvore categoria → grupo → disciplina → módulo → tema → aula, com arrastar para ordenar |
 | Vídeos | Envio ao Bunny com progresso, ou link; status |
 | Materiais | Envio de PDF, marcação de grátis |
 | Atividades | Questões com LaTeX, gabarito, tolerância, correção de abertas |

@@ -24,28 +24,37 @@ export type CourseCardData = {
 };
 
 /**
- * Seções do catálogo com as disciplinas publicadas (RF05).
- * @returns Categorias na ordem do painel, cada uma com seus cartões.
+ * Seções do catálogo com os grupos e as disciplinas publicadas (RF05).
+ * Categoria → Grupo → Disciplina; `courses` traz todas as da categoria
+ * (na ordem dos grupos) para contagens e listas simples.
+ * @returns Categorias na ordem do painel, cada uma com grupos e cartões.
  */
 export const getCatalog = cache(async () => {
   const categories = await prisma.category.findMany({
     orderBy: { sortOrder: "asc" },
     include: {
-      courses: {
-        where: { status: "published" },
+      groups: {
         orderBy: { sortOrder: "asc" },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          shortDescription: true,
-          icon: true,
-          color: true,
+        include: {
+          courses: {
+            where: { status: "published" },
+            orderBy: { sortOrder: "asc" },
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              shortDescription: true,
+              icon: true,
+              color: true,
+            },
+          },
         },
       },
     },
   });
-  const courseIds = categories.flatMap((c) => c.courses.map((course) => course.id));
+  const courseIds = categories.flatMap((c) =>
+    c.groups.flatMap((g) => g.courses.map((course) => course.id)),
+  );
 
   // Contagens agrupadas: aulas publicadas, aulas grátis e atividades grátis por disciplina.
   const [lessons, activities] = await Promise.all([
@@ -77,18 +86,34 @@ export const getCatalog = cache(async () => {
     freeCount.set(id, (freeCount.get(id) ?? 0) + 1);
   }
 
-  return categories.map((category) => ({
-    id: category.id,
-    slug: category.slug,
-    name: category.name,
-    description: category.description,
-    courses: category.courses.map((course): CourseCardData => ({
+  const toCard = (course: (typeof categories)[number]["groups"][number]["courses"][number]) =>
+    ({
       ...course,
       lessons: lessonCount.get(course.id) ?? 0,
       freeItems: freeCount.get(course.id) ?? 0,
-    })),
-  }));
+    }) satisfies CourseCardData;
+
+  return categories.map((category) => {
+    const groups = category.groups.map((group) => ({
+      id: group.id,
+      slug: group.slug,
+      name: group.name,
+      description: group.description,
+      courses: group.courses.map(toCard),
+    }));
+    return {
+      id: category.id,
+      slug: category.slug,
+      name: category.name,
+      description: category.description,
+      groups,
+      courses: groups.flatMap((g) => g.courses),
+    };
+  });
 });
+
+/** Categoria do catálogo, com grupos e cartões. */
+export type CatalogCategory = Awaited<ReturnType<typeof getCatalog>>[number];
 
 /** Aula na lista da disciplina, já com o acesso do visitante. */
 export type LessonListItem = {
@@ -111,7 +136,9 @@ export const getCoursePage = cache(async (slug: string) => {
   const course = await prisma.course.findFirst({
     where: { slug, status: "published" },
     include: {
-      category: { select: { slug: true, name: true } },
+      group: {
+        select: { slug: true, name: true, category: { select: { slug: true, name: true } } },
+      },
       coverFile: { select: { publicUrl: true } },
       modules: {
         where: { status: "published" },
@@ -285,7 +312,8 @@ export const getCoursePage = cache(async (slug: string) => {
       icon: course.icon,
       color: course.color,
       coverUrl: course.coverFile?.publicUrl ?? null,
-      category: course.category,
+      category: course.group.category,
+      group: { slug: course.group.slug, name: course.group.name },
     },
     modules,
     materials: materialItems,

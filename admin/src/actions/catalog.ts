@@ -12,6 +12,7 @@ import type { ActionState } from "@/types/action";
 import {
   categorySchema,
   courseSchema,
+  groupSchema,
   lessonSchema,
   moduleSchema,
   topicSchema,
@@ -58,11 +59,11 @@ export async function saveCategory(_state: ActionState, formData: FormData): Pro
   return { ok: true, message: "Categoria salva." };
 }
 
-/** Remove uma categoria sem disciplinas. */
+/** Remove uma categoria sem grupos. */
 export async function deleteCategory(id: number): Promise<ActionState> {
   await requireAdmin();
-  if ((await prisma.course.count({ where: { categoryId: id } })) > 0) {
-    return { ok: false, message: "Mova ou remova as disciplinas desta categoria antes." };
+  if ((await prisma.courseGroup.count({ where: { categoryId: id } })) > 0) {
+    return { ok: false, message: "Mova ou remova os grupos desta categoria antes." };
   }
   try {
     await prisma.category.delete({ where: { id } });
@@ -81,6 +82,82 @@ export async function reorderCategories(ids: number[]): Promise<ActionState> {
   await prisma.$transaction(
     parsed.data.map((itemId, index) =>
       prisma.category.update({ where: { id: itemId }, data: { sortOrder: index + 1 } }),
+    ),
+  );
+  revalidateCatalog();
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------
+// Grupos (nível entre a categoria e a disciplina)
+// ---------------------------------------------------------------------
+
+/** Cria ou edita um grupo. Mudar de categoria leva o grupo para o fim da nova. */
+export async function saveGroup(_state: ActionState, formData: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const parsed = parseForm(groupSchema, formData);
+  if (!parsed.success) return parsed.state;
+  const { id, ...data } = parsed.data;
+
+  // O slug só precisa ser único dentro da categoria (/aulas/categoria/grupo).
+  const clash = await prisma.courseGroup.findFirst({
+    where: { categoryId: data.categoryId, slug: data.slug, ...(id ? { id: { not: id } } : {}) },
+  });
+  if (clash)
+    return { ok: false, fieldErrors: { slug: [`Endereço já usado por "${clash.name}".`] } };
+
+  try {
+    const current = id
+      ? await prisma.courseGroup.findUnique({ where: { id }, select: { categoryId: true } })
+      : null;
+    const needsOrder = !id || (current && current.categoryId !== data.categoryId);
+    const last = needsOrder
+      ? await prisma.courseGroup.aggregate({
+          where: { categoryId: data.categoryId },
+          _max: { sortOrder: true },
+        })
+      : null;
+    const order = last ? { sortOrder: (last._max.sortOrder ?? 0) + 1 } : {};
+    if (id) await prisma.courseGroup.update({ where: { id }, data: { ...data, ...order } });
+    else await prisma.courseGroup.create({ data: { ...data, ...order } });
+  } catch (error) {
+    return actionError(error);
+  }
+  revalidateCatalog();
+  return { ok: true, message: "Grupo salvo." };
+}
+
+/** Remove um grupo sem disciplinas. */
+export async function deleteGroup(id: number): Promise<ActionState> {
+  await requireAdmin();
+  if ((await prisma.course.count({ where: { groupId: id } })) > 0) {
+    return { ok: false, message: "Mova ou remova as disciplinas deste grupo antes." };
+  }
+  try {
+    await prisma.courseGroup.delete({ where: { id } });
+  } catch (error) {
+    return actionError(error);
+  }
+  revalidateCatalog();
+  return { ok: true };
+}
+
+/**
+ * Grava a ordem dos grupos dentro de uma categoria.
+ * @param categoryId Categoria (garante que só grupos dela sejam alterados).
+ * @param ids IDs na nova ordem.
+ */
+export async function reorderGroups(categoryId: number, ids: number[]): Promise<ActionState> {
+  await requireAdmin();
+  const parsed = idList.safeParse(ids);
+  if (!parsed.success || !positiveId.safeParse(categoryId).success)
+    return { ok: false, message: "Ordem inválida." };
+  await prisma.$transaction(
+    parsed.data.map((itemId, index) =>
+      prisma.courseGroup.updateMany({
+        where: { id: itemId, categoryId },
+        data: { sortOrder: index + 1 },
+      }),
     ),
   );
   revalidateCatalog();
@@ -109,12 +186,12 @@ export async function saveCourse(_state: ActionState, formData: FormData): Promi
     if (id) {
       const current = await prisma.course.findUnique({
         where: { id },
-        select: { categoryId: true },
+        select: { groupId: true },
       });
-      const movedCategory = current && current.categoryId !== data.categoryId;
-      const last = movedCategory
+      const movedGroup = current && current.groupId !== data.groupId;
+      const last = movedGroup
         ? await prisma.course.aggregate({
-            where: { categoryId: data.categoryId },
+            where: { groupId: data.groupId },
             _max: { sortOrder: true },
           })
         : null;
@@ -124,7 +201,7 @@ export async function saveCourse(_state: ActionState, formData: FormData): Promi
       });
     } else {
       const last = await prisma.course.aggregate({
-        where: { categoryId: data.categoryId },
+        where: { groupId: data.groupId },
         _max: { sortOrder: true },
       });
       createdId = (
@@ -177,19 +254,19 @@ export async function deleteCourse(id: number): Promise<ActionState> {
 }
 
 /**
- * Grava a ordem das disciplinas dentro de uma categoria.
- * @param categoryId Categoria (garante que só itens dela sejam alterados).
+ * Grava a ordem das disciplinas dentro de um grupo.
+ * @param groupId Grupo (garante que só itens dele sejam alterados).
  * @param ids IDs na nova ordem.
  */
-export async function reorderCourses(categoryId: number, ids: number[]): Promise<ActionState> {
+export async function reorderCourses(groupId: number, ids: number[]): Promise<ActionState> {
   await requireAdmin();
   const parsed = idList.safeParse(ids);
-  if (!parsed.success || !positiveId.safeParse(categoryId).success)
+  if (!parsed.success || !positiveId.safeParse(groupId).success)
     return { ok: false, message: "Ordem inválida." };
   await prisma.$transaction(
     parsed.data.map((itemId, index) =>
       prisma.course.updateMany({
-        where: { id: itemId, categoryId },
+        where: { id: itemId, groupId },
         data: { sortOrder: index + 1 },
       }),
     ),

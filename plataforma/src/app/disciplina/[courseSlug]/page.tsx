@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, MessagesSquare } from "lucide-react";
+import { MessagesSquare } from "lucide-react";
 import { ActivityCard } from "@/components/course/ActivityCard";
 import { LessonRow } from "@/components/course/LessonRow";
 import { MaterialList } from "@/components/course/MaterialList";
 import { AnnouncementCard } from "@/components/forum/AnnouncementCard";
 import { SubscribeCta } from "@/components/subscription/SubscribeCta";
 import { Badge } from "@portfolio/ui/Badge";
+import { Breadcrumb } from "@/components/catalog/Breadcrumb";
 import { Container } from "@portfolio/ui/Container";
 import { Markdown } from "@portfolio/ui/Markdown";
 import { canUseForum } from "@/lib/access";
@@ -47,15 +48,18 @@ export default async function CoursePage({ params, searchParams }: Props) {
 
   return (
     <Container>
-      <nav aria-label="Caminho" className="text-muted flex items-center gap-1 pt-8 text-sm">
-        <Link href="/aulas" className="hover:text-accent">
-          Aulas
-        </Link>
-        <ChevronRight className="size-4" aria-hidden />
-        <Link href={`/aulas/${course.category.slug}`} className="hover:text-accent">
-          {course.category.name}
-        </Link>
-      </nav>
+      <Breadcrumb
+        className="pt-8"
+        items={[
+          { label: "Aulas", href: "/aulas" },
+          { label: course.category.name, href: `/aulas/${course.category.slug}` },
+          {
+            label: course.group.name,
+            href: `/aulas/${course.category.slug}/${course.group.slug}`,
+          },
+          { label: course.title },
+        ]}
+      />
 
       <header className="mt-4 mb-8 flex flex-col gap-5 sm:flex-row sm:items-center">
         <CourseIcon name={course.icon} color={course.color} size="lg" />

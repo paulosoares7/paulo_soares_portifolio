@@ -9,7 +9,7 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [categories, courses, lessons] = await Promise.all([
     prisma.category.findMany({
-      where: { courses: { some: { status: "published" } } },
+      where: { groups: { some: { courses: { some: { status: "published" } } } } },
       select: { slug: true },
     }),
     prisma.course.findMany({

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CategoryNav } from "@/components/catalog/CategoryNav";
-import { CourseCard } from "@/components/catalog/CourseCard";
+import { GroupSection } from "@/components/catalog/GroupSection";
 import { Container, PageTitle, SectionTitle } from "@portfolio/ui/Container";
 import { getCatalog } from "@/lib/catalog";
 
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     "Aulas de Física para Vestibulares, Ensino Médio, Ensino Superior e Concursos, com aulas grátis.",
 };
 
-/** Catálogo (RF05): disciplinas publicadas em seções. */
+/** Catálogo (RF05): disciplinas publicadas por categoria e grupo. */
 export default async function CatalogPage() {
   const categories = await getCatalog();
   const withCourses = categories.filter((c) => c.courses.length > 0);
@@ -45,13 +45,13 @@ export default async function CatalogPage() {
               {category.description ? (
                 <p className="text-muted -mt-3 mb-5 text-sm">{category.description}</p>
               ) : null}
-              <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                {category.courses.map((course) => (
-                  <li key={course.id}>
-                    <CourseCard course={course} />
-                  </li>
-                ))}
-              </ul>
+              <div className="flex flex-col gap-10">
+                {category.groups
+                  .filter((g) => g.courses.length > 0)
+                  .map((group) => (
+                    <GroupSection key={group.id} categorySlug={category.slug} group={group} />
+                  ))}
+              </div>
             </section>
           ))}
         </div>

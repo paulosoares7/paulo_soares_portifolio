@@ -65,12 +65,18 @@ INSERT INTO categories (id, slug, name, sort_order) VALUES
 (3, 'ensino-superior', 'Ensino Superior', 3),
 (4, 'concursos',       'Concursos',       4);
 
+-- Grupo: nível obrigatório entre a categoria e a disciplina.
+INSERT INTO course_groups (id, category_id, slug, name, sort_order) VALUES
+(1, 1, 'psc-ufam', 'PSC (UFAM)', 1),
+(2, 3, 'fisica',   'Física',     1),
+(3, 4, 'esa',      'ESA',        1);
+
 -- Física I tem conteúdo completo de exemplo. ESA e PSC 1 ficam em rascunho
 -- só para mostrar as outras seções do catálogo.
-INSERT INTO courses (id, category_id, slug, title, short_description, icon, color, status, sort_order) VALUES
-(1, 3, 'fisica-1', 'Física I', 'Cinemática, Leis de Newton e Energia, com vídeos, notas de aula e atividades.', 'atom', '#0EA5E9', 'published', 1),
-(2, 4, 'esa',      'ESA - Física', 'Física para o concurso da Escola de Sargentos das Armas. [EXEMPLO]', 'shield', '#22C55E', 'draft', 2),
-(3, 1, 'psc-1',    'PSC 1 - Física', 'Física da 1ª etapa do PSC/UFAM. [EXEMPLO]', 'graduation-cap', '#EAB308', 'draft', 3);
+INSERT INTO courses (id, group_id, slug, title, short_description, icon, color, status, sort_order) VALUES
+(1, 2, 'fisica-1', 'Física I', 'Cinemática, Leis de Newton e Energia, com vídeos, notas de aula e atividades.', 'atom', '#0EA5E9', 'published', 1),
+(2, 3, 'esa',      'Física', 'Física para o concurso da Escola de Sargentos das Armas. [EXEMPLO]', 'shield', '#22C55E', 'draft', 2),
+(3, 1, 'psc-1',    'Física 1', 'Física da 1ª etapa do PSC/UFAM. [EXEMPLO]', 'graduation-cap', '#EAB308', 'draft', 3);
 
 INSERT INTO modules (id, course_id, slug, title, description, status, sort_order) VALUES
 (1, 1, 'cinematica', 'Cinemática', 'Descrição do movimento: posição, velocidade, aceleração e gráficos.', 'published', 1),

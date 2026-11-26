@@ -45,7 +45,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
       where: { id },
       include: {
         coverFile: true,
-        category: { select: { name: true } },
+        group: { select: { name: true, category: { select: { name: true } } } },
         modules: {
           orderBy: { sortOrder: "asc" },
           include: {
@@ -62,7 +62,14 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
         },
       },
     }),
-    prisma.category.findMany({ orderBy: { sortOrder: "asc" }, select: { id: true, name: true } }),
+    prisma.category.findMany({
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        name: true,
+        groups: { orderBy: { sortOrder: "asc" }, select: { id: true, name: true } },
+      },
+    }),
     loadVideoOptions(),
   ]);
   if (!course) notFound();
@@ -80,7 +87,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
       <PageHeader
         title={course.title}
         back={{ href: "/disciplinas", label: "Disciplinas" }}
-        description={`${course.category.name} · ${course.modules.length} módulo(s) · ${allLessons.length} aula(s) · ${freeLessons}/${MAX_FREE_LESSONS} aulas grátis`}
+        description={`${course.group.category.name} › ${course.group.name} · ${course.modules.length} módulo(s) · ${allLessons.length} aula(s) · ${freeLessons}/${MAX_FREE_LESSONS} aulas grátis`}
       />
       <div className="flex flex-col gap-6">
         <Card>
@@ -270,7 +277,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
             categories={categories}
             item={{
               id: course.id,
-              categoryId: course.categoryId,
+              groupId: course.groupId,
               slug: course.slug,
               title: course.title,
               shortDescription: course.shortDescription,

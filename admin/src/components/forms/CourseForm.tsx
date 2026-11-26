@@ -13,7 +13,7 @@ import { courseSchema } from "@/validators/catalog";
 /** Valores de uma disciplina para edição. */
 export type CourseValues = {
   id: number;
-  categoryId: number;
+  groupId: number;
   slug: string;
   title: string;
   shortDescription: string;
@@ -23,14 +23,17 @@ export type CourseValues = {
   status: string;
 };
 
+/** Categorias com seus grupos, para o seletor em dois níveis. */
+export type GroupOptions = { id: number; name: string; groups: { id: number; name: string }[] }[];
+
 type CourseFormProps = {
   item?: CourseValues;
-  categories: { id: number; name: string }[];
-  defaultCategoryId?: number;
+  categories: GroupOptions;
+  defaultGroupId?: number;
 };
 
-/** Dados da disciplina: seção, título, endereço, textos, ícone, cor e status. */
-export function CourseForm({ item, categories, defaultCategoryId }: CourseFormProps) {
+/** Dados da disciplina: grupo, título, endereço, textos, ícone, cor e status. */
+export function CourseForm({ item, categories, defaultGroupId }: CourseFormProps) {
   const { formProps, state, pending, errors } = useFormAction(courseSchema, saveCourse);
   const [icon, setIcon] = useState(item?.icon || "atom");
   const [color, setColor] = useState(item?.color || "#0EA5E9");
@@ -38,20 +41,29 @@ export function CourseForm({ item, categories, defaultCategoryId }: CourseFormPr
   return (
     <form {...formProps} className="grid gap-4 md:grid-cols-2">
       <input type="hidden" name="id" value={item?.id ?? ""} />
-      <Field label="Seção do catálogo" htmlFor="course-cat" error={errors.categoryId}>
+      <Field
+        label="Categoria › Grupo"
+        htmlFor="course-group"
+        error={errors.groupId}
+        hint="Os grupos são criados em Categorias e grupos."
+      >
         <Select
-          id="course-cat"
-          name="categoryId"
-          defaultValue={item?.categoryId ?? defaultCategoryId ?? ""}
-          invalid={!!errors.categoryId}
+          id="course-group"
+          name="groupId"
+          defaultValue={item?.groupId ?? defaultGroupId ?? ""}
+          invalid={!!errors.groupId}
         >
           <option value="" disabled>
             Escolha...
           </option>
           {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
+            <optgroup key={c.id} label={c.name}>
+              {c.groups.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {c.name} › {g.name}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </Select>
       </Field>

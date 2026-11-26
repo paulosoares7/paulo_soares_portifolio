@@ -60,10 +60,7 @@ export default async function HomePage() {
         </Container>
       ) : null}
 
-      <LessonsSection
-        groups={categories.map((c) => ({ ...c, courses: c._count.courses }))}
-        freeLessons={freeLessons}
-      />
+      <LessonsSection groups={categories} freeLessons={freeLessons} />
     </>
   );
 }

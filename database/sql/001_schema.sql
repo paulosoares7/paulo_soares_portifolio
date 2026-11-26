@@ -228,7 +228,8 @@ CREATE TABLE import_jobs (
 
 -- =====================================================================
 -- 4. CATEGORIAS, DISCIPLINAS, MÓDULOS, TEMAS E AULAS
---    Hierarquia: categories > courses > modules > topics > lessons
+--    Hierarquia: categories > course_groups > courses > modules > topics > lessons
+--    Ex.: Vestibulares > PSC (UFAM) > Física 1 > Cinemática > MRU > aula
 -- =====================================================================
 
 -- Seções do catálogo: Vestibulares, Ensino Médio, Ensino Superior, Concursos.
@@ -241,11 +242,25 @@ CREATE TABLE categories (
   UNIQUE KEY uq_categories_slug (slug)
 ) ENGINE=InnoDB;
 
--- Disciplinas ou preparatórios (ex.: Física I, ESA, PSC 1).
+-- Grupos de uma categoria (ex.: PSC (UFAM), ENEM, ESA, 1º ano, Física).
+-- Nível obrigatório: toda disciplina fica dentro de um grupo.
+CREATE TABLE course_groups (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  category_id INT UNSIGNED NOT NULL,
+  slug        VARCHAR(80)  NOT NULL COMMENT 'Usado na URL: /aulas/vestibulares/psc-ufam',
+  name        VARCHAR(100) NOT NULL,
+  description VARCHAR(300) NULL,
+  sort_order  SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  UNIQUE KEY uq_course_groups_category_slug (category_id, slug),
+  CONSTRAINT fk_course_groups_category FOREIGN KEY (category_id) REFERENCES categories(id)
+) ENGINE=InnoDB;
+
+-- Disciplinas (ex.: Física I, Física 1 do PSC). As vagas da assinatura são
+-- por disciplina.
 CREATE TABLE courses (
   id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  category_id       INT UNSIGNED NOT NULL,
-  slug              VARCHAR(120) NOT NULL COMMENT 'Usado na URL: /aulas/fisica-1',
+  group_id          INT UNSIGNED NOT NULL,
+  slug              VARCHAR(120) NOT NULL COMMENT 'Usado na URL: /disciplina/fisica-1',
   title             VARCHAR(150) NOT NULL,
   short_description VARCHAR(300) NOT NULL,
   description       TEXT NULL COMMENT 'Markdown',
@@ -257,8 +272,8 @@ CREATE TABLE courses (
   created_at        DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at        DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   UNIQUE KEY uq_courses_slug (slug),
-  KEY ix_courses_category (category_id),
-  CONSTRAINT fk_courses_category FOREIGN KEY (category_id) REFERENCES categories(id),
+  KEY ix_courses_group (group_id),
+  CONSTRAINT fk_courses_group FOREIGN KEY (group_id) REFERENCES course_groups(id),
   CONSTRAINT fk_courses_cover FOREIGN KEY (cover_file_id) REFERENCES media_files(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 

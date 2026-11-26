@@ -8,6 +8,8 @@ import { slugify } from "@/validators/common";
 type TitleSlugFieldsProps = {
   prefix: string;
   titleLabel: string;
+  /** Nome do campo no formulário: "title" (padrão) ou "name" (categoria, grupo). */
+  titleName?: "title" | "name";
   defaultTitle?: string;
   defaultSlug?: string;
   errors: FieldErrors;
@@ -21,6 +23,7 @@ type TitleSlugFieldsProps = {
 export function TitleSlugFields({
   prefix,
   titleLabel,
+  titleName = "title",
   defaultTitle = "",
   defaultSlug = "",
   errors,
@@ -34,7 +37,7 @@ export function TitleSlugFields({
       <Field label={titleLabel} htmlFor={`${prefix}-title`} error={errors.title ?? errors.name}>
         <Input
           id={`${prefix}-title`}
-          name={prefix === "cat" ? "name" : "title"}
+          name={titleName}
           defaultValue={defaultTitle}
           invalid={!!(errors.title ?? errors.name)}
           onChange={(event) => {

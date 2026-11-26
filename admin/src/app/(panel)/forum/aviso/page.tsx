@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@portfolio/database";
+import { courseCatalogOrder } from "@/lib/catalog-order";
 import { AnnouncementForm } from "@/components/forms/AnnouncementForm";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -10,7 +11,7 @@ export const metadata: Metadata = { title: "Novo aviso" };
 export default async function NewAnnouncementPage() {
   const courses = await prisma.course.findMany({
     where: { status: { not: "archived" } },
-    orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+    orderBy: courseCatalogOrder,
     select: { id: true, title: true },
   });
   return (

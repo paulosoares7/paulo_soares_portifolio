@@ -41,11 +41,22 @@ export const getHomeData = cache(async () => {
         slug: true,
         name: true,
         description: true,
-        _count: { select: { courses: { where: { status: "published" } } } },
+        // Disciplinas publicadas ficam nos grupos da categoria.
+        groups: { select: { _count: { select: { courses: { where: { status: "published" } } } } } },
       },
     }),
   ]);
-  return { profile, highlights, featured, courses, freeLessons, categories };
+  return {
+    profile,
+    highlights,
+    featured,
+    courses,
+    freeLessons,
+    categories: categories.map(({ groups, ...category }) => ({
+      ...category,
+      courses: groups.reduce((sum, g) => sum + g._count.courses, 0),
+    })),
+  };
 });
 
 /**

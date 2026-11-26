@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarPlus, CircleStop, Pencil, Plus, RefreshCw } from "lucide-react";
 import { prisma, type Prisma } from "@portfolio/database";
+import { courseCatalogOrder } from "@/lib/catalog-order";
 import { endCourtesy, syncAsaasPayments } from "@/actions/subscriptions";
 import { CourtesyForm } from "@/components/forms/CourtesyForm";
 import { ExtendCourtesyForm } from "@/components/forms/ExtendCourtesyForm";
@@ -92,7 +93,7 @@ export default async function SubscriptionsPage({
     }),
     prisma.course.findMany({
       where: { status: { not: "archived" } },
-      orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+      orderBy: courseCatalogOrder,
       select: { id: true, title: true },
     }),
   ]);

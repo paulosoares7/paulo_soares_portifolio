@@ -31,21 +31,29 @@ export const getCatalog = cache(async () => {
   const categories = await prisma.category.findMany({
     orderBy: { sortOrder: "asc" },
     include: {
-      courses: {
-        where: { status: "published" },
+      // Projeto antigo (será apagado): achata Categoria → Grupo → Disciplina.
+      groups: {
         orderBy: { sortOrder: "asc" },
-        select: {
-          id: true,
-          slug: true,
-          title: true,
-          shortDescription: true,
-          icon: true,
-          color: true,
+        include: {
+          courses: {
+            where: { status: "published" },
+            orderBy: { sortOrder: "asc" },
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              shortDescription: true,
+              icon: true,
+              color: true,
+            },
+          },
         },
       },
     },
   });
-  const courseIds = categories.flatMap((c) => c.courses.map((course) => course.id));
+  const courseIds = categories.flatMap((c) =>
+    c.groups.flatMap((g) => g.courses.map((course) => course.id)),
+  );
 
   // Contagens agrupadas: aulas publicadas, aulas grátis e atividades grátis por disciplina.
   const [lessons, activities] = await Promise.all([
@@ -82,11 +90,13 @@ export const getCatalog = cache(async () => {
     slug: category.slug,
     name: category.name,
     description: category.description,
-    courses: category.courses.map((course): CourseCardData => ({
-      ...course,
-      lessons: lessonCount.get(course.id) ?? 0,
-      freeItems: freeCount.get(course.id) ?? 0,
-    })),
+    courses: category.groups
+      .flatMap((g) => g.courses)
+      .map((course): CourseCardData => ({
+        ...course,
+        lessons: lessonCount.get(course.id) ?? 0,
+        freeItems: freeCount.get(course.id) ?? 0,
+      })),
   }));
 });
 
@@ -111,7 +121,7 @@ export const getCoursePage = cache(async (slug: string) => {
   const course = await prisma.course.findFirst({
     where: { slug, status: "published" },
     include: {
-      category: { select: { slug: true, name: true } },
+      group: { select: { category: { select: { slug: true, name: true } } } },
       coverFile: { select: { publicUrl: true } },
       modules: {
         where: { status: "published" },
@@ -285,7 +295,7 @@ export const getCoursePage = cache(async (slug: string) => {
       icon: course.icon,
       color: course.color,
       coverUrl: course.coverFile?.publicUrl ?? null,
-      category: course.category,
+      category: course.group.category,
     },
     modules,
     materials: materialItems,

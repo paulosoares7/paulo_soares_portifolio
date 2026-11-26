@@ -13,12 +13,14 @@ MySQL 8.0.16+.
 
 ## Hierarquias
 
-- **Conteúdo:** categoria → disciplina → módulo → tema → aula → vídeo
-- **Acesso:** aluno → código → assinatura → vagas (até 3 disciplinas)
+- **Conteúdo:** categoria → grupo → disciplina → módulo → tema → aula → vídeo
+  (ex.: Vestibulares → PSC (UFAM) → Física 1 → Cinemática → MRU → aula)
+- **Acesso:** aluno → assinatura → vagas (até 3 disciplinas)
 
 ```mermaid
 erDiagram
-    categories ||--o{ courses : agrupa
+    categories ||--o{ course_groups : agrupa
+    course_groups ||--o{ courses : agrupa
     courses ||--o{ modules : tem
     modules ||--o{ topics : tem
     topics ||--o{ lessons : tem
@@ -71,7 +73,8 @@ ainda está no futuro.
 | Item | Conteúdo |
 | --- | --- |
 | Categorias | Vestibulares, Ensino Médio, Ensino Superior, Concursos |
-| Disciplinas | Física I (publicada, Ensino Superior); ESA e PSC 1 (rascunho) |
+| Grupos | Física (Ensino Superior), PSC (UFAM) (Vestibulares), ESA (Concursos) |
+| Disciplinas | Física I (publicada, grupo Física); Física 1 do PSC e Física da ESA (rascunho) |
 | Física I | 3 módulos, 7 temas, 11 aulas |
 | Grátis | 2 aulas de MRU com vídeo no YouTube (`SEU_VIDEO_ID_*`) + Atividade 1 |
 | Vídeo de teste | MP4 Big Buck Bunny (Blender Foundation, CC BY) na aula "Equação de Torricelli" |
@@ -278,13 +281,27 @@ Gerado a partir do banco criado pelo `001_schema.sql`.
 | `description` | varchar(300) | sim |  |  |
 | `sort_order` | smallint(5) unsigned | não |  |  |
 
+#### `course_groups`
+
+Nível obrigatório entre a categoria e a disciplina (ex.: PSC (UFAM), ENEM,
+ESA, 1º ano, Física). O slug é único dentro da categoria.
+
+| Coluna | Tipo | Nulo | Chave | Observação |
+| --- | --- | --- | --- | --- |
+| `id` | int(10) unsigned | não | PK |  |
+| `category_id` | int(10) unsigned | não | único (com `slug`), FK → `categories` |  |
+| `slug` | varchar(80) | não | único (com `category_id`) | Usado na URL: /aulas/vestibulares/psc-ufam |
+| `name` | varchar(100) | não |  |  |
+| `description` | varchar(300) | sim |  |  |
+| `sort_order` | smallint(5) unsigned | não |  |  |
+
 #### `courses`
 
 | Coluna | Tipo | Nulo | Chave | Observação |
 | --- | --- | --- | --- | --- |
 | `id` | int(10) unsigned | não | PK |  |
-| `category_id` | int(10) unsigned | não | índice FK → `categories` |  |
-| `slug` | varchar(120) | não | único | Usado na URL: /aulas/fisica-1 |
+| `group_id` | int(10) unsigned | não | índice FK → `course_groups` | A categoria vem do grupo |
+| `slug` | varchar(120) | não | único | Usado na URL: /disciplina/fisica-1 |
 | `title` | varchar(150) | não |  |  |
 | `short_description` | varchar(300) | não |  |  |
 | `description` | text | sim |  | Markdown |

@@ -41,7 +41,20 @@ export const getLessonPage = cache(
                 id: true,
                 slug: true,
                 title: true,
-                course: { select: { id: true, slug: true, title: true } },
+                course: {
+                  select: {
+                    id: true,
+                    slug: true,
+                    title: true,
+                    group: {
+                      select: {
+                        slug: true,
+                        name: true,
+                        category: { select: { slug: true, name: true } },
+                      },
+                    },
+                  },
+                },
               },
             },
           },

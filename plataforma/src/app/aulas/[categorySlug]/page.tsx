@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { CategoryNav } from "@/components/catalog/CategoryNav";
-import { CourseCard } from "@/components/catalog/CourseCard";
+import { Breadcrumb } from "@/components/catalog/Breadcrumb";
+import { GroupSection } from "@/components/catalog/GroupSection";
 import { Container, PageTitle } from "@portfolio/ui/Container";
 import { getCatalog } from "@/lib/catalog";
 
@@ -21,7 +22,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     : {};
 }
 
-/** Seção do catálogo: disciplinas publicadas de uma categoria. */
+/** Seção do catálogo: grupos da categoria, cada um com as disciplinas publicadas. */
 export default async function CategoryPage({ params }: { params: Params }) {
   const { categorySlug } = await params;
   const categories = await getCatalog();
@@ -30,6 +31,10 @@ export default async function CategoryPage({ params }: { params: Params }) {
 
   return (
     <Container>
+      <Breadcrumb
+        className="pt-8"
+        items={[{ label: "Aulas", href: "/aulas" }, { label: category.name }]}
+      />
       <PageTitle
         title={category.name}
         description={category.description ?? "Disciplinas desta seção."}
@@ -47,13 +52,13 @@ export default async function CategoryPage({ params }: { params: Params }) {
           Ainda não há disciplinas publicadas nesta seção.
         </p>
       ) : (
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {category.courses.map((course) => (
-            <li key={course.id}>
-              <CourseCard course={course} />
-            </li>
-          ))}
-        </ul>
+        <div className="flex flex-col gap-12">
+          {category.groups
+            .filter((g) => g.courses.length > 0)
+            .map((group) => (
+              <GroupSection key={group.id} categorySlug={category.slug} group={group} />
+            ))}
+        </div>
       )}
     </Container>
   );

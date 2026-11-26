@@ -5,12 +5,16 @@ import { SITE_URL } from "@/lib/site";
 // Gerado a cada 1 h a partir do conteúdo publicado (RNF06).
 export const revalidate = 3600;
 
-/** Sitemap da plataforma: páginas fixas, seções, disciplinas e aulas publicadas. */
+/** Sitemap da plataforma: páginas fixas, seções, grupos, disciplinas e aulas publicadas. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [categories, courses, lessons] = await Promise.all([
+  const [categories, groups, courses, lessons] = await Promise.all([
     prisma.category.findMany({
-      where: { courses: { some: { status: "published" } } },
+      where: { groups: { some: { courses: { some: { status: "published" } } } } },
       select: { slug: true },
+    }),
+    prisma.courseGroup.findMany({
+      where: { courses: { some: { status: "published" } } },
+      select: { slug: true, category: { select: { slug: true } } },
     }),
     prisma.course.findMany({
       where: { status: "published" },
@@ -37,6 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...fixed,
     ...categories.map((c) => ({ url: `${SITE_URL}/aulas/${c.slug}` })),
+    ...groups.map((g) => ({ url: `${SITE_URL}/aulas/${g.category.slug}/${g.slug}` })),
     ...courses.map((c) => ({ url: `${SITE_URL}/disciplina/${c.slug}`, lastModified: c.updatedAt })),
     ...lessons.map((l) => ({
       url: `${SITE_URL}/disciplina/${l.topic.module.course.slug}/${l.topic.module.slug}/${l.slug}`,

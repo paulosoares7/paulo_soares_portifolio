@@ -150,13 +150,22 @@ async function main(): Promise<void> {
       ],
     });
 
-    // Física I tem conteúdo completo. ESA e PSC 1 ficam em rascunho só para
-    // mostrar as outras seções do catálogo.
+    // Grupo: nível obrigatório entre a categoria e a disciplina.
+    await tx.courseGroup.createMany({
+      data: [
+        { id: 1, categoryId: 1, slug: "psc-ufam", name: "PSC (UFAM)", sortOrder: 1 },
+        { id: 2, categoryId: 3, slug: "fisica", name: "Física", sortOrder: 1 },
+        { id: 3, categoryId: 4, slug: "esa", name: "ESA", sortOrder: 1 },
+      ],
+    });
+
+    // Física I tem conteúdo completo. Física da ESA e Física 1 do PSC ficam
+    // em rascunho só para mostrar os outros grupos do catálogo.
     await tx.course.createMany({
       data: [
         {
           id: 1,
-          categoryId: 3,
+          groupId: 2,
           slug: "fisica-1",
           title: "Física I",
           shortDescription:
@@ -168,9 +177,9 @@ async function main(): Promise<void> {
         },
         {
           id: 2,
-          categoryId: 4,
+          groupId: 3,
           slug: "esa",
-          title: "ESA - Física",
+          title: "Física",
           shortDescription:
             "Física para o concurso da Escola de Sargentos das Armas. [EXEMPLO]",
           icon: "shield",
@@ -180,9 +189,9 @@ async function main(): Promise<void> {
         },
         {
           id: 3,
-          categoryId: 1,
+          groupId: 1,
           slug: "psc-1",
-          title: "PSC 1 - Física",
+          title: "Física 1",
           shortDescription: "Física da 1ª etapa do PSC/UFAM. [EXEMPLO]",
           icon: "graduation-cap",
           color: "#EAB308",

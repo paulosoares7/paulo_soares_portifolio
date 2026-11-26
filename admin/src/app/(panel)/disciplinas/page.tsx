@@ -16,16 +16,23 @@ export const metadata: Metadata = { title: "Disciplinas" };
 
 const STATUS_TONE = { draft: "neutral", published: "success", archived: "warning" } as const;
 
-/** Disciplinas agrupadas por seção, com arrastar para ordenar (RF25). */
+/** Disciplinas por categoria e grupo, com arrastar para ordenar (RF25). */
 export default async function CoursesPage() {
   const categories = await prisma.category.findMany({
     orderBy: { sortOrder: "asc" },
     include: {
-      courses: {
+      groups: {
         orderBy: { sortOrder: "asc" },
         include: {
-          _count: { select: { modules: true } },
-          modules: { select: { topics: { select: { _count: { select: { lessons: true } } } } } },
+          courses: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              _count: { select: { modules: true } },
+              modules: {
+                select: { topics: { select: { _count: { select: { lessons: true } } } } },
+              },
+            },
+          },
         },
       },
     },
@@ -35,7 +42,7 @@ export default async function CoursesPage() {
     <>
       <PageHeader
         title="Disciplinas"
-        description="Árvore: disciplina → módulos → temas → aulas. Clique numa disciplina para montar a estrutura."
+        description="Árvore: categoria → grupo → disciplina → módulos → temas → aulas. Clique numa disciplina para montar a estrutura."
         actions={
           <ButtonLink href="/disciplinas/nova">
             <Plus className="size-4" aria-hidden /> Nova disciplina
@@ -45,54 +52,70 @@ export default async function CoursesPage() {
       <div className="flex flex-col gap-6">
         {categories.map((category) => (
           <Card key={category.id}>
-            <CardTitle
-              actions={
-                <ButtonLink
-                  href={`/disciplinas/nova?categoria=${category.id}`}
-                  variant="ghost"
-                  size="sm"
-                >
-                  <Plus className="size-4" aria-hidden /> Adicionar aqui
-                </ButtonLink>
-              }
-            >
-              {category.name}
-            </CardTitle>
-            <SortableList
-              onReorder={reorderCourses.bind(null, category.id)}
-              empty={<EmptyState>Nenhuma disciplina nesta seção.</EmptyState>}
-              items={category.courses.map((course) => {
-                const lessons = course.modules
-                  .flatMap((m) => m.topics)
-                  .reduce((sum, t) => sum + t._count.lessons, 0);
-                return {
-                  id: course.id,
-                  content: (
-                    <Link
-                      href={`/disciplinas/${course.id}`}
-                      className="group flex items-center gap-3"
-                    >
-                      <span className="rounded-btn border-border bg-surface flex size-9 shrink-0 items-center justify-center border">
-                        <CourseIcon name={course.icon} color={course.color} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="group-hover:text-accent flex flex-wrap items-center gap-2 text-sm font-medium">
-                          {course.title}
-                          <Badge tone={STATUS_TONE[course.status]}>
-                            {COURSE_STATUSES[course.status]}
-                          </Badge>
-                        </span>
-                        <span className="text-muted block text-xs">
-                          /disciplina/{course.slug} · {course._count.modules} módulo(s) · {lessons}{" "}
-                          aula(s)
-                        </span>
-                      </span>
-                      <ChevronRight className="text-muted size-4" aria-hidden />
-                    </Link>
-                  ),
-                };
-              })}
-            />
+            <CardTitle>{category.name}</CardTitle>
+            {category.groups.length === 0 ? (
+              <EmptyState>
+                Sem grupos. Crie um em{" "}
+                <Link href="/categorias" className="text-accent hover:underline">
+                  Categorias e grupos
+                </Link>
+                .
+              </EmptyState>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {category.groups.map((group) => (
+                  <section key={group.id} aria-label={`${category.name} › ${group.name}`}>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <h3 className="text-muted text-sm font-semibold">
+                        {category.name} › <span className="text-text">{group.name}</span>
+                      </h3>
+                      <ButtonLink
+                        href={`/disciplinas/nova?grupo=${group.id}`}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        <Plus className="size-4" aria-hidden /> Adicionar aqui
+                      </ButtonLink>
+                    </div>
+                    <SortableList
+                      onReorder={reorderCourses.bind(null, group.id)}
+                      empty={<EmptyState>Nenhuma disciplina neste grupo.</EmptyState>}
+                      items={group.courses.map((course) => {
+                        const lessons = course.modules
+                          .flatMap((m) => m.topics)
+                          .reduce((sum, t) => sum + t._count.lessons, 0);
+                        return {
+                          id: course.id,
+                          content: (
+                            <Link
+                              href={`/disciplinas/${course.id}`}
+                              className="group flex items-center gap-3"
+                            >
+                              <span className="rounded-btn border-border bg-surface flex size-9 shrink-0 items-center justify-center border">
+                                <CourseIcon name={course.icon} color={course.color} />
+                              </span>
+                              <span className="min-w-0 flex-1">
+                                <span className="group-hover:text-accent flex flex-wrap items-center gap-2 text-sm font-medium">
+                                  {course.title}
+                                  <Badge tone={STATUS_TONE[course.status]}>
+                                    {COURSE_STATUSES[course.status]}
+                                  </Badge>
+                                </span>
+                                <span className="text-muted block text-xs">
+                                  /disciplina/{course.slug} · {course._count.modules} módulo(s) ·{" "}
+                                  {lessons} aula(s)
+                                </span>
+                              </span>
+                              <ChevronRight className="text-muted size-4" aria-hidden />
+                            </Link>
+                          ),
+                        };
+                      })}
+                    />
+                  </section>
+                ))}
+              </div>
+            )}
           </Card>
         ))}
         {categories.length === 0 ? <EmptyState>Crie primeiro as categorias.</EmptyState> : null}

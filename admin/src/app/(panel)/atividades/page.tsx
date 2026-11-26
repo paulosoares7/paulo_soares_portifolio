@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, ClipboardCheck, Plus } from "lucide-react";
 import { prisma } from "@portfolio/database";
+import { courseCatalogOrder } from "@/lib/catalog-order";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
@@ -17,7 +18,7 @@ const DIFFICULTY_TONE = { easy: "success", medium: "warning", hard: "danger" } a
 export default async function ActivitiesPage() {
   const [courses, pendingOpen] = await Promise.all([
     prisma.course.findMany({
-      orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+      orderBy: courseCatalogOrder,
       select: {
         id: true,
         title: true,

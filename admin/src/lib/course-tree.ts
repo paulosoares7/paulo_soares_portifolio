@@ -1,4 +1,5 @@
 import { prisma } from "@portfolio/database";
+import { courseCatalogOrder } from "@/lib/catalog-order";
 import type { CourseTree } from "@/types/catalog";
 
 /**
@@ -7,7 +8,7 @@ import type { CourseTree } from "@/types/catalog";
  */
 export async function loadCourseTree(): Promise<CourseTree[]> {
   const courses = await prisma.course.findMany({
-    orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+    orderBy: courseCatalogOrder,
     select: {
       id: true,
       title: true,

@@ -51,7 +51,7 @@ Para trocar a senha depois, rode o mesmo comando com o mesmo e-mail.
 | Áreas de pesquisa | RF23 | Áreas (arrastar para ordenar) |
 | Redes sociais | RF23 | LinkedIn, Currículo Lattes, Instagram, Facebook, GitHub e E-mail: adicionar, editar, ordenar, ocultar e remover |
 | Publicações | RF24 | Cadastro, filtros; importação do XML/ZIP do Lattes e do ORCID **com prévia** (nova, alterada, igual, duplicata por DOI) e histórico em `import_jobs` |
-| Categorias e Disciplinas | RF25 | Árvore categoria → disciplina → módulo → tema → aula, arrastar para ordenar em todos os níveis, LaTeX com prévia |
+| Categorias, grupos e disciplinas | RF25 | Árvore categoria → grupo → disciplina → módulo → tema → aula, arrastar para ordenar em todos os níveis, LaTeX com prévia |
 | Vídeos | RF26 | Envio direto ao Bunny (TUS, barra de progresso, status), links YouTube/Vimeo/MP4, vínculo com aulas |
 | Materiais | RF27 | PDF (privado) ou link, por disciplina/módulo/aula, marcação de grátis |
 | Atividades | RF28 | Múltipla escolha, numérica com tolerância e aberta; LaTeX; correção manual das abertas |

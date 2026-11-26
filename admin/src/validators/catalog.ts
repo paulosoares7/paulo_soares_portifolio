@@ -10,10 +10,19 @@ export const categorySchema = z.object({
   description: optionalText(300),
 });
 
-/** Disciplina ou preparatório. */
-export const courseSchema = z.object({
+/** Grupo dentro de uma categoria (PSC (UFAM), ENEM, ESA, 1º ano...). */
+export const groupSchema = z.object({
   id: optionalId,
   categoryId: id,
+  slug: slug.max(80, "Máximo de 80 caracteres."),
+  name: requiredText(100),
+  description: optionalText(300),
+});
+
+/** Disciplina (fica dentro de um grupo). */
+export const courseSchema = z.object({
+  id: optionalId,
+  groupId: id,
   slug,
   title: requiredText(150),
   shortDescription: requiredText(300),

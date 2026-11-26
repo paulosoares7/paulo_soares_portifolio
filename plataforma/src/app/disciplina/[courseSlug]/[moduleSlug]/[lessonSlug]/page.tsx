@@ -6,6 +6,7 @@ import { LessonRow } from "@/components/course/LessonRow";
 import { MaterialList } from "@/components/course/MaterialList";
 import { VideoPlayer } from "@/components/player/VideoPlayer";
 import { Badge } from "@portfolio/ui/Badge";
+import { Breadcrumb } from "@/components/catalog/Breadcrumb";
 import { Container } from "@portfolio/ui/Container";
 import { Markdown } from "@portfolio/ui/Markdown";
 import { requireLoginForLocked } from "@/lib/access";
@@ -51,17 +52,17 @@ export default async function LessonPage({ params }: Props) {
 
   return (
     <Container className="pt-6">
-      <nav aria-label="Caminho" className="text-muted flex flex-wrap items-center gap-1 text-sm">
-        <Link href="/aulas" className="hover:text-accent">
-          Aulas
-        </Link>
-        <ChevronRight className="size-4" aria-hidden />
-        <Link href={`/disciplina/${course.slug}`} className="hover:text-accent">
-          {course.title}
-        </Link>
-        <ChevronRight className="size-4" aria-hidden />
-        <span>{module.title}</span>
-      </nav>
+      <Breadcrumb
+        items={[
+          { label: course.group.category.name, href: `/aulas/${course.group.category.slug}` },
+          {
+            label: course.group.name,
+            href: `/aulas/${course.group.category.slug}/${course.group.slug}`,
+          },
+          { label: course.title, href: `/disciplina/${course.slug}` },
+          { label: module.title },
+        ]}
+      />
 
       <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">

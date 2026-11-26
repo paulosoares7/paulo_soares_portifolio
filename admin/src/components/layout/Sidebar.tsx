@@ -40,7 +40,7 @@ const groups: { title: string; items: Item[] }[] = [
   {
     title: "Plataforma de aulas",
     items: [
-      { href: "/categorias", label: "Categorias", icon: FolderTree },
+      { href: "/categorias", label: "Categorias e grupos", icon: FolderTree },
       { href: "/disciplinas", label: "Disciplinas", icon: BookOpen },
       { href: "/videos", label: "Vídeos", icon: Video },
       { href: "/materiais", label: "Materiais", icon: FileText },

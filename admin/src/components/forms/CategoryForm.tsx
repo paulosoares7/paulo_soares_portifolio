@@ -25,6 +25,7 @@ export function CategoryForm({
       <TitleSlugFields
         prefix="cat"
         titleLabel="Nome"
+        titleName="name"
         defaultTitle={item?.name}
         defaultSlug={item?.slug}
         errors={errors}

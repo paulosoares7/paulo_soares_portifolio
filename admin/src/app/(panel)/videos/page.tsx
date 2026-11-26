@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Link2, Pencil, Plus, RefreshCw, Trash2, Unlink } from "lucide-react";
 import { prisma } from "@portfolio/database";
+import { courseCatalogOrder } from "@/lib/catalog-order";
 import { deleteVideo, refreshVideoStatus, unlinkLessonVideo } from "@/actions/videos";
 import { BunnyUploadForm } from "@/components/forms/BunnyUploadForm";
 import { LinkLessonForm, type LessonGroup } from "@/components/forms/LinkLessonForm";
@@ -49,7 +50,7 @@ export default async function VideosPage() {
     }),
     prisma.course.findMany({
       where: { status: { not: "archived" } },
-      orderBy: [{ category: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+      orderBy: courseCatalogOrder,
       select: {
         title: true,
         modules: {

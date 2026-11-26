@@ -10,19 +10,23 @@ export const metadata: Metadata = { title: "Nova disciplina" };
 export default async function NewCoursePage({
   searchParams,
 }: {
-  searchParams: Promise<{ categoria?: string }>;
+  searchParams: Promise<{ grupo?: string }>;
 }) {
-  const { categoria } = await searchParams;
+  const { grupo } = await searchParams;
   const categories = await prisma.category.findMany({
     orderBy: { sortOrder: "asc" },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      groups: { orderBy: { sortOrder: "asc" }, select: { id: true, name: true } },
+    },
   });
 
   return (
     <>
       <PageHeader title="Nova disciplina" back={{ href: "/disciplinas", label: "Disciplinas" }} />
       <Card>
-        <CourseForm categories={categories} defaultCategoryId={Number(categoria) || undefined} />
+        <CourseForm categories={categories} defaultGroupId={Number(grupo) || undefined} />
       </Card>
     </>
   );

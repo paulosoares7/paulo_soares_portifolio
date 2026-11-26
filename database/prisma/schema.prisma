@@ -478,7 +478,7 @@ model ImportJob {
 
 // =====================================================================
 // 4. CATEGORIAS, DISCIPLINAS, MÓDULOS, TEMAS E AULAS
-//    Hierarquia: categories > courses > modules > topics > lessons
+//    Hierarquia: categories > course_groups > courses > modules > topics > lessons
 // =====================================================================
 
 /// Seções do catálogo: Vestibulares, Ensino Médio, Ensino Superior, Concursos.
@@ -490,16 +490,34 @@ model Category {
   description String? @db.VarChar(300)
   sortOrder   Int     @default(0) @map("sort_order") @db.UnsignedSmallInt
 
-  courses Course[]
+  groups CourseGroup[]
 
   @@map("categories")
+}
+
+/// Grupos de uma categoria (ex.: PSC (UFAM), ENEM, ESA, 1º ano, Física).
+/// Nível obrigatório: toda disciplina fica dentro de um grupo.
+model CourseGroup {
+  id          Int     @id @default(autoincrement()) @db.UnsignedInt
+  categoryId  Int     @map("category_id") @db.UnsignedInt
+  /// Usado na URL: /aulas/vestibulares/psc-ufam
+  slug        String  @db.VarChar(80)
+  name        String  @db.VarChar(100)
+  description String? @db.VarChar(300)
+  sortOrder   Int     @default(0) @map("sort_order") @db.UnsignedSmallInt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_course_groups_category")
+  courses  Course[]
+
+  @@unique([categoryId, slug], map: "uq_course_groups_category_slug")
+  @@map("course_groups")
 }
 
 /// Disciplinas ou preparatórios (ex.: Física I, ESA, PSC 1).
 model Course {
   id               Int          @id @default(autoincrement()) @db.UnsignedInt
-  categoryId       Int          @map("category_id") @db.UnsignedInt
-  /// Usado na URL: /aulas/fisica-1
+  groupId          Int          @map("group_id") @db.UnsignedInt
+  /// Usado na URL: /disciplina/fisica-1
   slug             String       @unique(map: "uq_courses_slug") @db.VarChar(120)
   title            String       @db.VarChar(150)
   shortDescription String       @map("short_description") @db.VarChar(300)
@@ -515,7 +533,7 @@ model Course {
   createdAt        DateTime     @default(now()) @map("created_at") @db.DateTime(3)
   updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
 
-  category            Category                   @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_courses_category")
+  group               CourseGroup                @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_courses_group")
   coverFile           MediaFile?                 @relation(fields: [coverFileId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_courses_cover")
   modules             Module[]
   materials           Material[]
@@ -524,7 +542,7 @@ model Course {
   changesTo           SubscriptionCourseChange[] @relation("CourseChangeTo")
   forumThreads        ForumThread[]
 
-  @@index([categoryId], map: "ix_courses_category")
+  @@index([groupId], map: "ix_courses_group")
   @@index([coverFileId], map: "fk_courses_cover")
   @@map("courses")
 }
