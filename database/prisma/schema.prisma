@@ -1,0 +1,1106 @@
+// =====================================================================
+// Projeto: database (Portfólio Acadêmico + Plataforma de Aulas)
+// Schema Prisma equivalente a sql/001_schema.sql (a especificação).
+//
+// Regras deste arquivo:
+//   * Models em PascalCase no singular, mapeados para a tabela no plural.
+//   * Campos em camelCase, mapeados para a coluna em snake_case.
+//   * Nomes de índices, chaves únicas e FKs iguais aos do SQL (map:).
+//   * FKs sem regra no SQL usam NoAction (= padrão do MySQL).
+//   * Colunas com ON DELETE CASCADE/SET NULL nunca entram em CHECK.
+//   * O Prisma não gera CHECK, visão nem ON UPDATE CURRENT_TIMESTAMP:
+//     eles estão no final da migração inicial (migration.sql).
+//   * Índices "fk_*" existem porque o MySQL cria um índice para cada FK
+//     que não tem um índice próprio; declarar aqui evita diferença
+//     entre o banco e o schema.
+// =====================================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// =====================================================================
+// ENUMS (no MySQL viram colunas ENUM; a ordem dos valores importa)
+// =====================================================================
+
+enum SocialNetwork {
+  instagram
+  linkedin
+  youtube
+  github
+  x
+  facebook
+  tiktok
+  whatsapp
+  email
+  other
+}
+
+enum DegreeLevel {
+  technical
+  undergraduate
+  specialization
+  masters
+  doctorate
+  postdoc
+}
+
+enum DegreeStatus {
+  completed
+  in_progress
+  incomplete
+}
+
+/// Origem dos dados do portfólio (formação e atuação).
+enum PortfolioSource {
+  manual
+  lattes
+}
+
+enum PublicationType {
+  journal_article
+  conference_paper
+  book
+  book_chapter
+  thesis
+  dissertation
+  abstract
+  technical_report
+  other
+}
+
+enum PublicationSource {
+  manual
+  lattes
+  orcid
+}
+
+enum ImportSource {
+  lattes_xml
+  orcid_api
+}
+
+enum ImportStatus {
+  running
+  success
+  failed
+}
+
+enum CourseStatus {
+  draft
+  published
+  archived
+}
+
+/// Status de módulos, aulas e atividades.
+enum ContentStatus {
+  draft
+  published
+}
+
+enum VideoOrigin {
+  hosted
+  external
+}
+
+enum VideoProvider {
+  bunny
+  panda
+  youtube
+  vimeo
+  mp4
+}
+
+enum VideoStatus {
+  uploading
+  processing
+  ready
+  failed
+}
+
+enum MaterialType {
+  lecture_notes
+  study_material
+  exercise_list
+  slides
+  formula_sheet
+  link
+}
+
+enum ActivityDifficulty {
+  easy
+  medium
+  hard
+}
+
+enum ShowAnswers {
+  never
+  after_submit
+  after_last_attempt
+}
+
+enum QuestionType {
+  multiple_choice
+  numeric
+  open
+}
+
+enum AccessCodeStatus {
+  active
+  suspended
+  revoked
+}
+
+enum BillingCycle {
+  monthly
+  quarterly
+  semiannual
+  yearly
+}
+
+enum SubscriptionStatus {
+  pending
+  active
+  past_due
+  canceled
+  expired
+}
+
+/// manual = cortesia liberada pelo painel.
+enum SubscriptionGateway {
+  asaas
+  manual
+}
+
+enum BillingType {
+  pix
+  pix_automatic
+  credit_card
+  boleto
+}
+
+enum CourseChangeStatus {
+  scheduled
+  applied
+  canceled
+}
+
+enum PaymentStatus {
+  pending
+  confirmed
+  received
+  overdue
+  refunded
+  canceled
+}
+
+enum PaymentEventGateway {
+  asaas
+}
+
+enum AccessLogEvent {
+  login
+  login_denied
+  play
+  material_view
+  logout
+}
+
+enum ThreadType {
+  discussion
+  question
+  announcement
+}
+
+/// Aluno: pending até a aprovação; admin grava visible.
+enum ModerationStatus {
+  visible
+  pending
+  hidden
+}
+
+enum ReactionType {
+  like
+  love
+  celebrate
+}
+
+// =====================================================================
+// 1. ADMINISTRAÇÃO
+// =====================================================================
+
+/// Conta do painel (hoje só o professor).
+model AdminUser {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  name         String    @db.VarChar(120)
+  email        String    @unique(map: "uq_admin_users_email") @db.VarChar(190)
+  /// Hash bcrypt.
+  passwordHash String    @map("password_hash") @db.VarChar(100)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at") @db.DateTime(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  sessions      AdminSession[]
+  uploadedFiles MediaFile[]
+  importJobs    ImportJob[]
+  forumThreads  ForumThread[]
+  forumPosts    ForumPost[]
+
+  @@map("admin_users")
+}
+
+/// Sessões do painel. O cookie guarda o token; aqui fica só o hash.
+model AdminSession {
+  id          Int       @id @default(autoincrement()) @db.UnsignedInt
+  adminUserId Int       @map("admin_user_id") @db.UnsignedInt
+  /// SHA-256 do token da sessão.
+  tokenHash   String    @unique(map: "uq_admin_sessions_token") @map("token_hash") @db.Char(64)
+  ipAddress   String?   @map("ip_address") @db.VarChar(45)
+  userAgent   String?   @map("user_agent") @db.VarChar(255)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  expiresAt   DateTime  @map("expires_at") @db.DateTime(3)
+  revokedAt   DateTime? @map("revoked_at") @db.DateTime(3)
+
+  adminUser AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_admin_sessions_user")
+
+  @@index([adminUserId], map: "ix_admin_sessions_user")
+  @@map("admin_sessions")
+}
+
+/// Arquivos enviados pelo painel. O arquivo fica no storage; aqui só a referência.
+model MediaFile {
+  id           Int      @id @default(autoincrement()) @db.UnsignedInt
+  /// Caminho no bucket (ex.: materials/2026/lista-1.pdf).
+  storageKey   String   @unique(map: "uq_media_files_key") @map("storage_key") @db.VarChar(255)
+  /// Preenchido só para arquivos públicos (ex.: foto do perfil).
+  publicUrl    String?  @map("public_url") @db.VarChar(500)
+  originalName String   @map("original_name") @db.VarChar(255)
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  sizeBytes    Int      @map("size_bytes") @db.UnsignedInt
+  /// Privado = servido por URL assinada.
+  isPrivate    Boolean  @default(true) @map("is_private")
+  uploadedBy   Int?     @map("uploaded_by") @db.UnsignedInt
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  uploader       AdminUser?         @relation(fields: [uploadedBy], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_media_files_admin")
+  profilePhotos  Profile[]          @relation("ProfilePhoto")
+  profileCvs     Profile[]          @relation("ProfileCv")
+  courseCovers   Course[]
+  materials      Material[]
+  questionImages ActivityQuestion[]
+
+  @@index([uploadedBy], map: "fk_media_files_admin")
+  @@map("media_files")
+}
+
+// =====================================================================
+// 2. PERFIL E PORTFÓLIO
+// =====================================================================
+
+/// Dados do dono do portfólio. Tabela de linha única (id = 1, garantido por CHECK).
+model Profile {
+  id              Int       @id @default(1) @db.UnsignedTinyInt
+  fullName        String    @map("full_name") @db.VarChar(150)
+  /// Nome curto do cabeçalho (ex.: Paulo.).
+  displayName     String    @map("display_name") @db.VarChar(80)
+  /// Ex.: Professor de Física e pesquisador.
+  headline        String    @db.VarChar(150)
+  /// Texto da tela inicial.
+  shortBio        String    @map("short_bio") @db.VarChar(400)
+  /// Texto da página Sobre (Markdown).
+  longBio         String?   @map("long_bio") @db.Text
+  photoFileId     Int?      @map("photo_file_id") @db.UnsignedInt
+  /// PDF do botão Baixar currículo.
+  cvFileId        Int?      @map("cv_file_id") @db.UnsignedInt
+  publicEmail     String?   @map("public_email") @db.VarChar(190)
+  city            String?   @db.VarChar(100)
+  /// Número do currículo Lattes.
+  lattesId        String?   @map("lattes_id") @db.VarChar(20)
+  lattesUrl       String?   @map("lattes_url") @db.VarChar(255)
+  /// Formato 0000-0000-0000-0000.
+  orcidId         String?   @map("orcid_id") @db.Char(19)
+  scholarUrl      String?   @map("scholar_url") @db.VarChar(255)
+  /// Data de atualização lida do XML do Lattes.
+  lattesUpdatedAt DateTime? @map("lattes_updated_at") @db.Date
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  photoFile MediaFile? @relation("ProfilePhoto", fields: [photoFileId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_profile_photo")
+  cvFile    MediaFile? @relation("ProfileCv", fields: [cvFileId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_profile_cv")
+
+  @@index([photoFileId], map: "fk_profile_photo")
+  @@index([cvFileId], map: "fk_profile_cv")
+  @@map("profile")
+}
+
+/// Números de destaque da tela inicial (ex.: "10+ anos de docência").
+model ProfileHighlight {
+  id        Int    @id @default(autoincrement()) @db.UnsignedInt
+  /// Ex.: 10+
+  value     String @db.VarChar(20)
+  /// Ex.: anos de docência
+  label     String @db.VarChar(60)
+  sortOrder Int    @default(0) @map("sort_order") @db.UnsignedSmallInt
+
+  @@map("profile_highlights")
+}
+
+/// Links das redes sociais (apenas links, sem API).
+model SocialLink {
+  id        Int           @id @default(autoincrement()) @db.UnsignedInt
+  network   SocialNetwork
+  label     String?       @db.VarChar(60)
+  url       String        @db.VarChar(255)
+  sortOrder Int           @default(0) @map("sort_order") @db.UnsignedSmallInt
+  isVisible Boolean       @default(true) @map("is_visible")
+
+  @@map("social_links")
+}
+
+/// Formação acadêmica (graduação, especialização, mestrado...).
+model AcademicDegree {
+  id          Int             @id @default(autoincrement()) @db.UnsignedInt
+  level       DegreeLevel
+  course      String          @db.VarChar(200)
+  institution String          @db.VarChar(200)
+  startYear   Int?            @map("start_year") @db.UnsignedSmallInt
+  /// NULL = em andamento.
+  endYear     Int?            @map("end_year") @db.UnsignedSmallInt
+  status      DegreeStatus    @default(completed)
+  thesisTitle String?         @map("thesis_title") @db.VarChar(500)
+  advisor     String?         @db.VarChar(150)
+  source      PortfolioSource @default(manual)
+  sortOrder   Int             @default(0) @map("sort_order") @db.UnsignedSmallInt
+
+  @@map("academic_degrees")
+}
+
+/// Atuação profissional (SEDUC, FAMETRO...).
+model Experience {
+  id          Int             @id @default(autoincrement()) @db.UnsignedInt
+  institution String          @db.VarChar(200)
+  role        String          @db.VarChar(150)
+  description String?         @db.Text
+  startDate   DateTime?       @map("start_date") @db.Date
+  /// NULL = atual.
+  endDate     DateTime?       @map("end_date") @db.Date
+  source      PortfolioSource @default(manual)
+  sortOrder   Int             @default(0) @map("sort_order") @db.UnsignedSmallInt
+
+  @@map("experiences")
+}
+
+/// Áreas e linhas de pesquisa.
+model ResearchArea {
+  id          Int     @id @default(autoincrement()) @db.UnsignedInt
+  name        String  @db.VarChar(150)
+  description String? @db.VarChar(400)
+  sortOrder   Int     @default(0) @map("sort_order") @db.UnsignedSmallInt
+
+  @@map("research_areas")
+}
+
+// =====================================================================
+// 3. PUBLICAÇÕES (manual, XML do Lattes ou API do ORCID)
+// =====================================================================
+
+model Publication {
+  id         Int               @id @default(autoincrement()) @db.UnsignedInt
+  type       PublicationType
+  title      String            @db.VarChar(500)
+  /// Como deve aparecer: SOBRENOME, N.; ...
+  authors    String            @db.VarChar(1000)
+  /// Periódico, evento ou editora.
+  venue      String?           @db.VarChar(300)
+  year       Int               @db.UnsignedSmallInt
+  volume     String?           @db.VarChar(20)
+  issue      String?           @db.VarChar(20)
+  pages      String?           @db.VarChar(30)
+  doi        String?           @db.VarChar(150)
+  url        String?           @db.VarChar(500)
+  abstract   String?           @db.Text
+  /// Separadas por ponto e vírgula.
+  keywords   String?           @db.VarChar(500)
+  source     PublicationSource @default(manual)
+  /// put-code do ORCID ou sequência do Lattes.
+  externalId String?           @map("external_id") @db.VarChar(100)
+  /// Aparece no destaque da home.
+  isFeatured Boolean           @default(false) @map("is_featured")
+  isVisible  Boolean           @default(true) @map("is_visible")
+  createdAt  DateTime          @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt  DateTime          @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@unique([source, externalId], map: "uq_publications_source_ext")
+  @@index([year], map: "ix_publications_year")
+  @@index([doi], map: "ix_publications_doi")
+  @@map("publications")
+}
+
+/// Histórico das importações (para saber o que cada importação mudou).
+model ImportJob {
+  id           Int          @id @default(autoincrement()) @db.UnsignedInt
+  source       ImportSource
+  status       ImportStatus @default(running)
+  fileName     String?      @map("file_name") @db.VarChar(255)
+  itemsCreated Int          @default(0) @map("items_created") @db.UnsignedInt
+  itemsUpdated Int          @default(0) @map("items_updated") @db.UnsignedInt
+  itemsSkipped Int          @default(0) @map("items_skipped") @db.UnsignedInt
+  message      String?      @db.Text
+  startedBy    Int?         @map("started_by") @db.UnsignedInt
+  startedAt    DateTime     @default(now()) @map("started_at") @db.DateTime(3)
+  finishedAt   DateTime?    @map("finished_at") @db.DateTime(3)
+
+  starter AdminUser? @relation(fields: [startedBy], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_import_jobs_admin")
+
+  @@index([startedBy], map: "fk_import_jobs_admin")
+  @@map("import_jobs")
+}
+
+// =====================================================================
+// 4. CATEGORIAS, DISCIPLINAS, MÓDULOS, TEMAS E AULAS
+//    Hierarquia: categories > courses > modules > topics > lessons
+// =====================================================================
+
+/// Seções do catálogo: Vestibulares, Ensino Médio, Ensino Superior, Concursos.
+model Category {
+  id          Int     @id @default(autoincrement()) @db.UnsignedInt
+  /// Ex.: vestibulares
+  slug        String  @unique(map: "uq_categories_slug") @db.VarChar(80)
+  name        String  @db.VarChar(100)
+  description String? @db.VarChar(300)
+  sortOrder   Int     @default(0) @map("sort_order") @db.UnsignedSmallInt
+
+  courses Course[]
+
+  @@map("categories")
+}
+
+/// Disciplinas ou preparatórios (ex.: Física I, ESA, PSC 1).
+model Course {
+  id               Int          @id @default(autoincrement()) @db.UnsignedInt
+  categoryId       Int          @map("category_id") @db.UnsignedInt
+  /// Usado na URL: /aulas/fisica-1
+  slug             String       @unique(map: "uq_courses_slug") @db.VarChar(120)
+  title            String       @db.VarChar(150)
+  shortDescription String       @map("short_description") @db.VarChar(300)
+  /// Markdown.
+  description      String?      @db.Text
+  coverFileId      Int?         @map("cover_file_id") @db.UnsignedInt
+  /// Nome do ícone lucide (ex.: atom).
+  icon             String?      @db.VarChar(40)
+  /// Cor do cartão em hex (ex.: #0EA5E9).
+  color            String?      @db.Char(7)
+  status           CourseStatus @default(draft)
+  sortOrder        Int          @default(0) @map("sort_order") @db.UnsignedSmallInt
+  createdAt        DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  category            Category                    @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_courses_category")
+  coverFile           MediaFile?                  @relation(fields: [coverFileId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_courses_cover")
+  modules             Module[]
+  materials           Material[]
+  subscriptionCourses SubscriptionCourse[]
+  changesFrom         SubscriptionCourseChange[]  @relation("CourseChangeFrom")
+  changesTo           SubscriptionCourseChange[]  @relation("CourseChangeTo")
+  forumThreads        ForumThread[]
+
+  @@index([categoryId], map: "ix_courses_category")
+  @@index([coverFileId], map: "fk_courses_cover")
+  @@map("courses")
+}
+
+/// Módulos de uma disciplina (ex.: Cinemática).
+model Module {
+  id          Int           @id @default(autoincrement()) @db.UnsignedInt
+  courseId    Int           @map("course_id") @db.UnsignedInt
+  slug        String        @db.VarChar(120)
+  title       String        @db.VarChar(150)
+  description String?       @db.Text
+  status      ContentStatus @default(draft)
+  sortOrder   Int           @default(0) @map("sort_order") @db.UnsignedSmallInt
+  createdAt   DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  course     Course     @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_modules_course")
+  topics     Topic[]
+  materials  Material[]
+  activities Activity[]
+
+  @@unique([courseId, slug], map: "uq_modules_course_slug")
+  @@map("modules")
+}
+
+/// Temas dentro de um módulo (ex.: MRU, MRUV, Gráficos).
+model Topic {
+  id          Int     @id @default(autoincrement()) @db.UnsignedInt
+  moduleId    Int     @map("module_id") @db.UnsignedInt
+  title       String  @db.VarChar(150)
+  description String? @db.VarChar(400)
+  sortOrder   Int     @default(0) @map("sort_order") @db.UnsignedSmallInt
+
+  module  Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_topics_module")
+  lessons Lesson[]
+
+  @@index([moduleId], map: "ix_topics_module")
+  @@map("topics")
+}
+
+// =====================================================================
+// 5. VÍDEOS E MATERIAIS
+// =====================================================================
+
+/// Vídeos. O arquivo fica no provedor de streaming (origin = hosted) ou é um
+/// link externo (origin = external). CHECK ck_videos_origin na migração.
+model Video {
+  id              Int           @id @default(autoincrement()) @db.UnsignedInt
+  /// Nome interno no painel.
+  title           String        @db.VarChar(200)
+  origin          VideoOrigin
+  provider        VideoProvider
+  /// ID no Bunny/Panda (origin = hosted).
+  providerVideoId String?       @map("provider_video_id") @db.VarChar(100)
+  /// URL do YouTube/Vimeo/MP4 (origin = external).
+  externalUrl     String?       @map("external_url") @db.VarChar(500)
+  durationSeconds Int?          @map("duration_seconds") @db.UnsignedInt
+  thumbnailUrl    String?       @map("thumbnail_url") @db.VarChar(500)
+  status          VideoStatus   @default(ready)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime      @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  lessons Lesson[]
+
+  @@index([provider, providerVideoId], map: "ix_videos_provider")
+  @@map("videos")
+}
+
+/// Aulas. video_id NULL = "vídeo em breve".
+model Lesson {
+  id        Int           @id @default(autoincrement()) @db.UnsignedInt
+  topicId   Int           @map("topic_id") @db.UnsignedInt
+  videoId   Int?          @map("video_id") @db.UnsignedInt
+  slug      String        @db.VarChar(120)
+  title     String        @db.VarChar(200)
+  summary   String?       @db.VarChar(400)
+  /// Texto de apoio da aula (Markdown + LaTeX).
+  content   String?       @db.Text
+  /// Aula gratuita (vídeo no YouTube), visível sem código.
+  isPreview Boolean       @default(false) @map("is_preview")
+  status    ContentStatus @default(draft)
+  sortOrder Int           @default(0) @map("sort_order") @db.UnsignedSmallInt
+  createdAt DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt DateTime      @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  topic        Topic            @relation(fields: [topicId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_lessons_topic")
+  video        Video?           @relation(fields: [videoId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_lessons_video")
+  materials    Material[]
+  progress     LessonProgress[]
+  accessLogs   AccessLog[]
+  forumThreads ForumThread[]
+
+  @@unique([topicId, slug], map: "uq_lessons_topic_slug")
+  @@index([videoId], map: "ix_lessons_video")
+  @@map("lessons")
+}
+
+/// Notas de aula, materiais, listas e links. PDFs nunca são baixáveis.
+/// Pertence a exatamente um dono (disciplina, módulo ou aula): CHECK na migração.
+model Material {
+  id          Int          @id @default(autoincrement()) @db.UnsignedInt
+  courseId    Int?         @map("course_id") @db.UnsignedInt
+  moduleId    Int?         @map("module_id") @db.UnsignedInt
+  lessonId    Int?         @map("lesson_id") @db.UnsignedInt
+  type        MaterialType
+  title       String       @db.VarChar(200)
+  description String?      @db.VarChar(400)
+  fileId      Int?         @map("file_id") @db.UnsignedInt
+  externalUrl String?      @map("external_url") @db.VarChar(500)
+  /// Visível sem código.
+  isPreview   Boolean      @default(false) @map("is_preview")
+  sortOrder   Int          @default(0) @map("sort_order") @db.UnsignedSmallInt
+  createdAt   DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+
+  // RESTRICT (NoAction) porque essas colunas estão em CHECK.
+  course     Course?     @relation(fields: [courseId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_materials_course")
+  module     Module?     @relation(fields: [moduleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_materials_module")
+  lesson     Lesson?     @relation(fields: [lessonId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_materials_lesson")
+  file       MediaFile?  @relation(fields: [fileId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_materials_file")
+  accessLogs AccessLog[]
+
+  @@index([courseId], map: "fk_materials_course")
+  @@index([moduleId], map: "fk_materials_module")
+  @@index([lessonId], map: "fk_materials_lesson")
+  @@index([fileId], map: "fk_materials_file")
+  @@map("materials")
+}
+
+// =====================================================================
+// 6. ATIVIDADES
+// =====================================================================
+
+model Activity {
+  id           Int                @id @default(autoincrement()) @db.UnsignedInt
+  moduleId     Int                @map("module_id") @db.UnsignedInt
+  title        String             @db.VarChar(200)
+  instructions String?            @db.Text
+  difficulty   ActivityDifficulty @default(medium)
+  /// NULL = ilimitado.
+  maxAttempts  Int?               @map("max_attempts") @db.UnsignedTinyInt
+  showAnswers  ShowAnswers        @default(after_submit) @map("show_answers")
+  /// Atividade gratuita (fecha o trio de aulas grátis).
+  isPreview    Boolean            @default(false) @map("is_preview")
+  status       ContentStatus      @default(draft)
+  sortOrder    Int                @default(0) @map("sort_order") @db.UnsignedSmallInt
+  createdAt    DateTime           @default(now()) @map("created_at") @db.DateTime(3)
+
+  module    Module             @relation(fields: [moduleId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_activities_module")
+  questions ActivityQuestion[]
+  attempts  ActivityAttempt[]
+
+  @@index([moduleId], map: "ix_activities_module")
+  @@map("activities")
+}
+
+model ActivityQuestion {
+  id            Int          @id @default(autoincrement()) @db.UnsignedInt
+  activityId    Int          @map("activity_id") @db.UnsignedInt
+  type          QuestionType
+  /// Markdown + LaTeX.
+  statement     String       @db.Text
+  /// Gráfico ou figura do enunciado.
+  imageFileId   Int?         @map("image_file_id") @db.UnsignedInt
+  points        Decimal      @default(1.00) @db.Decimal(5, 2)
+  /// Resposta das questões numéricas.
+  numericAnswer Decimal?     @map("numeric_answer") @db.Decimal(14, 4)
+  /// Erro aceito em % (ex.: 2.00).
+  tolerancePct  Decimal?     @map("tolerance_pct") @db.Decimal(5, 2)
+  /// Ex.: m/s
+  unit          String?      @db.VarChar(20)
+  /// Resolução mostrada após a entrega.
+  explanation   String?      @db.Text
+  sortOrder     Int          @default(0) @map("sort_order") @db.UnsignedSmallInt
+
+  activity  Activity         @relation(fields: [activityId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_questions_activity")
+  imageFile MediaFile?       @relation(fields: [imageFileId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_questions_image")
+  options   QuestionOption[]
+  answers   AttemptAnswer[]
+
+  @@index([activityId], map: "ix_questions_activity")
+  @@index([imageFileId], map: "fk_questions_image")
+  @@map("activity_questions")
+}
+
+model QuestionOption {
+  id         Int     @id @default(autoincrement()) @db.UnsignedInt
+  questionId Int     @map("question_id") @db.UnsignedInt
+  text       String  @db.VarChar(1000)
+  isCorrect  Boolean @default(false) @map("is_correct")
+  /// Por que esta alternativa está certa ou errada.
+  feedback   String? @db.VarChar(500)
+  sortOrder  Int     @default(0) @map("sort_order") @db.UnsignedSmallInt
+
+  question ActivityQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_options_question")
+  answers  AttemptAnswer[]
+
+  @@index([questionId], map: "ix_options_question")
+  @@map("question_options")
+}
+
+// =====================================================================
+// 7. ALUNOS E ACESSO POR CÓDIGO
+// =====================================================================
+
+/// Aluno: identificado pelo e-mail informado na compra.
+model Student {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  name        String   @db.VarChar(150)
+  /// Nome mostrado no fórum.
+  displayName String   @map("display_name") @db.VarChar(60)
+  email       String   @unique(map: "uq_students_email") @db.VarChar(190)
+  isBlocked   Boolean  @default(false) @map("is_blocked")
+  createdAt   DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  accessCodes      AccessCode[]
+  subscriptions    Subscription[]
+  lessonProgress   LessonProgress[]
+  activityAttempts ActivityAttempt[]
+  forumThreads     ForumThread[]
+  forumPosts       ForumPost[]
+  reactions        PostReaction[]
+
+  @@map("students")
+}
+
+/// Código de acesso. O texto aparece uma vez; o banco guarda só o SHA-256.
+model AccessCode {
+  id         Int              @id @default(autoincrement()) @db.UnsignedInt
+  studentId  Int              @map("student_id") @db.UnsignedInt
+  /// SHA-256 do código normalizado (sem hífens, maiúsculo).
+  codeHash   String           @unique(map: "uq_access_codes_hash") @map("code_hash") @db.Char(64)
+  /// Últimos 4 caracteres, para o suporte identificar.
+  codeHint   String           @map("code_hint") @db.Char(4)
+  status     AccessCodeStatus @default(active)
+  maxDevices Int              @default(2) @map("max_devices") @db.UnsignedTinyInt
+  createdAt  DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  lastUsedAt DateTime?        @map("last_used_at") @db.DateTime(3)
+
+  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_access_codes_student")
+  sessions   StudentSession[]
+  accessLogs AccessLog[]
+
+  @@index([studentId], map: "ix_access_codes_student")
+  @@map("access_codes")
+}
+
+/// Sessões abertas com um código (uma por dispositivo).
+model StudentSession {
+  id           Int       @id @default(autoincrement()) @db.UnsignedInt
+  accessCodeId Int       @map("access_code_id") @db.UnsignedInt
+  tokenHash    String    @unique(map: "uq_student_sessions_token") @map("token_hash") @db.Char(64)
+  /// Ex.: Chrome no Windows.
+  deviceLabel  String?   @map("device_label") @db.VarChar(100)
+  ipAddress    String?   @map("ip_address") @db.VarChar(45)
+  userAgent    String?   @map("user_agent") @db.VarChar(255)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  lastSeenAt   DateTime  @default(now()) @map("last_seen_at") @db.DateTime(3)
+  expiresAt    DateTime  @map("expires_at") @db.DateTime(3)
+  revokedAt    DateTime? @map("revoked_at") @db.DateTime(3)
+
+  accessCode AccessCode  @relation(fields: [accessCodeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_student_sessions_code")
+  accessLogs AccessLog[]
+
+  @@index([accessCodeId, revokedAt], map: "ix_student_sessions_code")
+  @@map("student_sessions")
+}
+
+// =====================================================================
+// 8. ASSINATURAS E PAGAMENTOS (gateway: Asaas)
+// =====================================================================
+
+/// Planos à venda. Hoje: um plano mensal com até 3 disciplinas (CHECK na migração).
+model Plan {
+  id           Int          @id @default(autoincrement()) @db.UnsignedInt
+  name         String       @db.VarChar(120)
+  description  String?      @db.VarChar(400)
+  priceCents   Int          @map("price_cents") @db.UnsignedInt
+  currency     String       @default("BRL") @db.Char(3)
+  billingCycle BillingCycle @default(monthly) @map("billing_cycle")
+  /// Vagas de disciplina.
+  maxCourses   Int          @default(3) @map("max_courses") @db.UnsignedTinyInt
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime     @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+/// Assinatura do aluno. Cancelada = acesso até current_period_end.
+model Subscription {
+  id                    Int                 @id @default(autoincrement()) @db.UnsignedInt
+  studentId             Int                 @map("student_id") @db.UnsignedInt
+  planId                Int                 @map("plan_id") @db.UnsignedInt
+  status                SubscriptionStatus  @default(pending)
+  gateway               SubscriptionGateway @default(asaas)
+  /// cus_... no Asaas.
+  gatewayCustomerId     String?             @map("gateway_customer_id") @db.VarChar(100)
+  /// sub_... no Asaas.
+  gatewaySubscriptionId String?             @map("gateway_subscription_id") @db.VarChar(100)
+  billingType           BillingType?        @map("billing_type")
+  /// Preço contratado (não muda se o plano mudar).
+  priceCents            Int                 @map("price_cents") @db.UnsignedInt
+  currentPeriodStart    DateTime?           @map("current_period_start") @db.DateTime(3)
+  /// Acesso vale até aqui.
+  currentPeriodEnd      DateTime?           @map("current_period_end") @db.DateTime(3)
+  canceledAt            DateTime?           @map("canceled_at") @db.DateTime(3)
+  createdAt             DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime            @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  student       Student                    @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_subscriptions_student")
+  plan          Plan                       @relation(fields: [planId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_subscriptions_plan")
+  courses       SubscriptionCourse[]
+  courseChanges SubscriptionCourseChange[]
+  payments      Payment[]
+
+  @@unique([gateway, gatewaySubscriptionId], map: "uq_subscriptions_gateway")
+  @@index([studentId, status], map: "ix_subscriptions_student")
+  @@index([planId], map: "fk_subscriptions_plan")
+  @@map("subscriptions")
+}
+
+/// Vagas da assinatura: slot 1, 2 e 3 (CHECK na migração), sem repetir disciplina.
+model SubscriptionCourse {
+  subscriptionId Int      @map("subscription_id") @db.UnsignedInt
+  slotNumber     Int      @map("slot_number") @db.UnsignedTinyInt
+  courseId       Int      @map("course_id") @db.UnsignedInt
+  assignedAt     DateTime @default(now()) @map("assigned_at") @db.DateTime(3)
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_sub_courses_subscription")
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_sub_courses_course")
+
+  @@id([subscriptionId, slotNumber])
+  @@unique([subscriptionId, courseId], map: "uq_subscription_course")
+  @@index([courseId], map: "fk_sub_courses_course")
+  @@map("subscription_courses")
+}
+
+/// Trocas de disciplina: uma por ciclo, aplicada na renovação.
+model SubscriptionCourseChange {
+  id             Int                @id @default(autoincrement()) @db.UnsignedInt
+  subscriptionId Int                @map("subscription_id") @db.UnsignedInt
+  slotNumber     Int                @map("slot_number") @db.UnsignedTinyInt
+  /// NULL = vaga estava vazia.
+  fromCourseId   Int?               @map("from_course_id") @db.UnsignedInt
+  toCourseId     Int                @map("to_course_id") @db.UnsignedInt
+  status         CourseChangeStatus @default(scheduled)
+  requestedAt    DateTime           @default(now()) @map("requested_at") @db.DateTime(3)
+  effectiveAt    DateTime           @map("effective_at") @db.DateTime(3)
+  appliedAt      DateTime?          @map("applied_at") @db.DateTime(3)
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_changes_subscription")
+  fromCourse   Course?      @relation("CourseChangeFrom", fields: [fromCourseId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_changes_from")
+  toCourse     Course       @relation("CourseChangeTo", fields: [toCourseId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_changes_to")
+
+  @@index([subscriptionId, status], map: "ix_changes_subscription")
+  @@index([fromCourseId], map: "fk_changes_from")
+  @@index([toCourseId], map: "fk_changes_to")
+  @@map("subscription_course_changes")
+}
+
+/// Cobranças geradas pelo Asaas para cada assinatura.
+model Payment {
+  id               Int           @id @default(autoincrement()) @db.UnsignedInt
+  subscriptionId   Int           @map("subscription_id") @db.UnsignedInt
+  /// pay_... no Asaas.
+  gatewayPaymentId String        @unique(map: "uq_payments_gateway") @map("gateway_payment_id") @db.VarChar(100)
+  status           PaymentStatus @default(pending)
+  billingType      BillingType?  @map("billing_type")
+  amountCents      Int           @map("amount_cents") @db.UnsignedInt
+  /// Valor líquido após a tarifa.
+  netAmountCents   Int?          @map("net_amount_cents") @db.UnsignedInt
+  dueDate          DateTime      @map("due_date") @db.Date
+  paidAt           DateTime?     @map("paid_at") @db.DateTime(3)
+  /// Link da fatura/QR Code no Asaas.
+  invoiceUrl       String?       @map("invoice_url") @db.VarChar(500)
+  createdAt        DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime      @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  subscription Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_payments_subscription")
+  events       PaymentEvent[]
+
+  @@index([subscriptionId, dueDate], map: "ix_payments_subscription")
+  @@map("payments")
+}
+
+/// Registro bruto de cada notificação do Asaas. A chave única garante a idempotência.
+model PaymentEvent {
+  id          Int                 @id @default(autoincrement()) @db.UnsignedInt
+  gateway     PaymentEventGateway @default(asaas)
+  eventId     String              @map("event_id") @db.VarChar(100)
+  /// Ex.: PAYMENT_RECEIVED
+  eventType   String              @map("event_type") @db.VarChar(60)
+  paymentId   Int?                @map("payment_id") @db.UnsignedInt
+  payload     Json
+  receivedAt  DateTime            @default(now()) @map("received_at") @db.DateTime(3)
+  processedAt DateTime?           @map("processed_at") @db.DateTime(3)
+  error       String?             @db.VarChar(500)
+
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_payment_events_payment")
+
+  @@unique([gateway, eventId], map: "uq_payment_events")
+  @@index([paymentId], map: "fk_payment_events_payment")
+  @@map("payment_events")
+}
+
+// =====================================================================
+// 9. PROGRESSO, TENTATIVAS E LOGS
+// =====================================================================
+
+model LessonProgress {
+  studentId      Int       @map("student_id") @db.UnsignedInt
+  lessonId       Int       @map("lesson_id") @db.UnsignedInt
+  secondsWatched Int       @default(0) @map("seconds_watched") @db.UnsignedInt
+  /// Segundo onde o aluno parou.
+  lastPosition   Int       @default(0) @map("last_position") @db.UnsignedInt
+  completedAt    DateTime? @map("completed_at") @db.DateTime(3)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_progress_student")
+  lesson  Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_progress_lesson")
+
+  @@id([studentId, lessonId])
+  @@index([lessonId], map: "fk_progress_lesson")
+  @@map("lesson_progress")
+}
+
+model ActivityAttempt {
+  id          Int       @id @default(autoincrement()) @db.UnsignedInt
+  activityId  Int       @map("activity_id") @db.UnsignedInt
+  studentId   Int       @map("student_id") @db.UnsignedInt
+  score       Decimal?  @db.Decimal(6, 2)
+  maxScore    Decimal?  @map("max_score") @db.Decimal(6, 2)
+  startedAt   DateTime  @default(now()) @map("started_at") @db.DateTime(3)
+  submittedAt DateTime? @map("submitted_at") @db.DateTime(3)
+
+  activity Activity        @relation(fields: [activityId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_attempts_activity")
+  student  Student         @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_attempts_student")
+  answers  AttemptAnswer[]
+
+  @@index([studentId, activityId], map: "ix_attempts_student")
+  @@index([activityId], map: "fk_attempts_activity")
+  @@map("activity_attempts")
+}
+
+model AttemptAnswer {
+  id               Int      @id @default(autoincrement()) @db.UnsignedInt
+  attemptId        Int      @map("attempt_id") @db.UnsignedInt
+  questionId       Int      @map("question_id") @db.UnsignedInt
+  selectedOptionId Int?     @map("selected_option_id") @db.UnsignedInt
+  numericValue     Decimal? @map("numeric_value") @db.Decimal(14, 4)
+  /// Questões abertas, corrigidas no painel.
+  textValue        String?  @map("text_value") @db.Text
+  /// NULL = aguardando correção.
+  isCorrect        Boolean? @map("is_correct")
+  pointsAwarded    Decimal? @map("points_awarded") @db.Decimal(5, 2)
+
+  attempt        ActivityAttempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_answers_attempt")
+  question       ActivityQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_answers_question")
+  selectedOption QuestionOption?  @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_answers_option")
+
+  @@unique([attemptId, questionId], map: "uq_answers_attempt_question")
+  @@index([questionId], map: "fk_answers_question")
+  @@index([selectedOptionId], map: "fk_answers_option")
+  @@map("attempt_answers")
+}
+
+/// Log de acessos ao conteúdo pago (ajuda a detectar código compartilhado).
+model AccessLog {
+  id           BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  accessCodeId Int            @map("access_code_id") @db.UnsignedInt
+  sessionId    Int?           @map("session_id") @db.UnsignedInt
+  event        AccessLogEvent
+  lessonId     Int?           @map("lesson_id") @db.UnsignedInt
+  materialId   Int?           @map("material_id") @db.UnsignedInt
+  ipAddress    String?        @map("ip_address") @db.VarChar(45)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.DateTime(3)
+
+  accessCode AccessCode      @relation(fields: [accessCodeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_access_logs_code")
+  session    StudentSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_access_logs_session")
+  lesson     Lesson?         @relation(fields: [lessonId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_access_logs_lesson")
+  material   Material?       @relation(fields: [materialId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_access_logs_material")
+
+  @@index([accessCodeId, createdAt], map: "ix_access_logs_code_time")
+  @@index([sessionId], map: "fk_access_logs_session")
+  @@index([lessonId], map: "fk_access_logs_lesson")
+  @@index([materialId], map: "fk_access_logs_material")
+  @@map("access_logs")
+}
+
+// =====================================================================
+// 10. FÓRUM E AVISOS
+//     Tópico (thread) -> posts. O 1º post é o corpo do tópico.
+//     type = announcement são os avisos do professor (feed).
+//     Autor: aluno OU admin, nunca os dois (CHECK na migração).
+// =====================================================================
+
+model ForumThread {
+  id          Int              @id @default(autoincrement()) @db.UnsignedInt
+  courseId    Int              @map("course_id") @db.UnsignedInt
+  /// NULL = discussão geral da disciplina.
+  lessonId    Int?             @map("lesson_id") @db.UnsignedInt
+  type        ThreadType       @default(discussion)
+  title       String           @db.VarChar(200)
+  studentId   Int?             @map("student_id") @db.UnsignedInt
+  adminUserId Int?             @map("admin_user_id") @db.UnsignedInt
+  status      ModerationStatus @default(pending)
+  isPinned    Boolean          @default(false) @map("is_pinned")
+  /// Para type = question.
+  isResolved  Boolean          @default(false) @map("is_resolved")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  lastPostAt  DateTime         @default(now()) @map("last_post_at") @db.DateTime(3)
+
+  course    Course      @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_threads_course")
+  lesson    Lesson?     @relation(fields: [lessonId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_threads_lesson")
+  student   Student?    @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_threads_student")
+  adminUser AdminUser?  @relation(fields: [adminUserId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_threads_admin")
+  posts     ForumPost[]
+
+  @@index([courseId, type, lastPostAt], map: "ix_threads_course")
+  @@index([lessonId], map: "ix_threads_lesson")
+  @@index([studentId], map: "fk_threads_student")
+  @@index([adminUserId], map: "fk_threads_admin")
+  @@map("forum_threads")
+}
+
+model ForumPost {
+  id          Int              @id @default(autoincrement()) @db.UnsignedInt
+  threadId    Int              @map("thread_id") @db.UnsignedInt
+  studentId   Int?             @map("student_id") @db.UnsignedInt
+  adminUserId Int?             @map("admin_user_id") @db.UnsignedInt
+  /// Markdown + LaTeX.
+  body        String           @db.Text
+  status      ModerationStatus @default(pending)
+  /// Marcado como resposta oficial.
+  isAnswer    Boolean          @default(false) @map("is_answer")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  editedAt    DateTime?        @map("edited_at") @db.DateTime(3)
+
+  thread    ForumThread    @relation(fields: [threadId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_posts_thread")
+  student   Student?       @relation(fields: [studentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_posts_student")
+  adminUser AdminUser?     @relation(fields: [adminUserId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_posts_admin")
+  reactions PostReaction[]
+
+  @@index([threadId, createdAt], map: "ix_posts_thread")
+  @@index([studentId], map: "fk_posts_student")
+  @@index([adminUserId], map: "fk_posts_admin")
+  @@map("forum_posts")
+}
+
+/// Reações (curtir, amei, comemorar). Uma por aluno por post.
+model PostReaction {
+  postId    Int          @map("post_id") @db.UnsignedInt
+  studentId Int          @map("student_id") @db.UnsignedInt
+  type      ReactionType
+  createdAt DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+
+  post    ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reactions_post")
+  student Student   @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_reactions_student")
+
+  @@id([postId, studentId])
+  @@index([studentId], map: "fk_reactions_student")
+  @@map("post_reactions")
+}
+
+// =====================================================================
+// 11. SITE
+// =====================================================================
+
+/// Configurações livres do site (cores, textos do rodapé, SEO...).
+model SiteSetting {
+  settingKey String   @id @map("setting_key") @db.VarChar(80)
+  value      Json
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+
+  @@map("site_settings")
+}
+
+/// Mensagens do formulário de contato.
+model ContactMessage {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  name      String    @db.VarChar(150)
+  email     String    @db.VarChar(190)
+  subject   String?   @db.VarChar(200)
+  message   String    @db.Text
+  ipAddress String?   @map("ip_address") @db.VarChar(45)
+  createdAt DateTime  @default(now()) @map("created_at") @db.DateTime(3)
+  readAt    DateTime? @map("read_at") @db.DateTime(3)
+
+  @@index([readAt], map: "ix_contact_read")
+  @@map("contact_messages")
+}

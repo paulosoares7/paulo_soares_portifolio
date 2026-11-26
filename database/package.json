@@ -1,0 +1,40 @@
+{
+  "name": "@portfolio/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Schema, migrações e Prisma Client do MySQL (usado por admin e site)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose stop",
+    "db:logs": "docker compose logs -f mysql",
+    "setup": "npm run db:up && npm run migrate:deploy && npm run seed",
+    "generate": "prisma generate",
+    "migrate:dev": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:status": "prisma migrate status",
+    "seed": "prisma db seed",
+    "create-admin": "tsx scripts/create-admin.ts",
+    "backup": "bash scripts/backup.sh",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/adapter-mariadb": "7.10.1",
+    "@prisma/client": "7.10.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.0.0",
+    "prisma": "7.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.0",
+    "zod": "^4.6.7"
+  }
+}
