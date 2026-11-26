@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* Tokens de docs/06-interface.md (paleta do modelo Jacob, tema escuro). */
+@theme {
+  --color-bg: #0b1622;
+  --color-surface: #112233;
+  --color-surface-2: #0e1c2b;
+  --color-border: #1e3a52;
+  --color-accent: #0ea5e9;
+  --color-accent-strong: #0284c7;
+  --color-text: #f1f5f9;
+  --color-muted: #94a3b8;
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-danger: #ef4444;
+
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-btn: 8px;
+  --radius-card: 12px;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Barra de rolagem discreta no tema escuro. */
+* {
+  scrollbar-color: var(--color-border) transparent;
+}
+
+/* Conteúdo Markdown renderizado (prévia de enunciados e aulas). */
+.prose-admin p {
+  margin: 0.5rem 0;
+}
+.prose-admin ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.prose-admin ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+.prose-admin code {
+  background: var(--color-surface-2);
+  padding: 0 0.25rem;
+  border-radius: 4px;
+}
+.prose-admin a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}

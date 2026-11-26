@@ -3,16 +3,21 @@
   "private": true,
   "description": "Portfólio acadêmico + plataforma de aulas (monorepo com npm workspaces)",
   "workspaces": [
-    "database"
+    "database",
+    "admin"
   ],
   "scripts": {
     "db:setup": "npm run setup -w @portfolio/database",
     "db:up": "npm run db:up -w @portfolio/database",
-    "db:down": "npm run db:down -w @portfolio/database"
+    "db:down": "npm run db:down -w @portfolio/database",
+    "admin:dev": "npm run dev -w @portfolio/admin"
   },
   "allowScripts": {
     "prisma@7.10.1": true,
     "@prisma/engines@7.10.1": true,
     "esbuild@0.28.2": true
+  },
+  "overrides": {
+    "katex": "^0.19.1"
   }
 }

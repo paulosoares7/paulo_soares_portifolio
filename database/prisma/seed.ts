@@ -38,7 +38,8 @@ async function main(): Promise<void> {
         id: 1,
         name: "Paulo",
         email: "admin@exemplo.com",
-        passwordHash: "$2b$12$TROQUE.ESTE.HASH.NO.PRIMEIRO.ACESSO.....................",
+        passwordHash:
+          "$2b$12$TROQUE.ESTE.HASH.NO.PRIMEIRO.ACESSO.....................",
       },
     });
 
@@ -70,9 +71,21 @@ async function main(): Promise<void> {
 
     await tx.socialLink.createMany({
       data: [
-        { network: "instagram", url: "https://instagram.com/[usuario]", sortOrder: 1 },
-        { network: "linkedin", url: "https://linkedin.com/in/[usuario]", sortOrder: 2 },
-        { network: "youtube", url: "https://youtube.com/@[canal]", sortOrder: 3 },
+        {
+          network: "instagram",
+          url: "https://instagram.com/[usuario]",
+          sortOrder: 1,
+        },
+        {
+          network: "linkedin",
+          url: "https://linkedin.com/in/[usuario]",
+          sortOrder: 2,
+        },
+        {
+          network: "youtube",
+          url: "https://youtube.com/@[canal]",
+          sortOrder: 3,
+        },
       ],
     });
 
@@ -111,7 +124,10 @@ async function main(): Promise<void> {
     await tx.researchArea.createMany({
       data: [
         { name: "Ensino de Física e obstáculos epistemológicos", sortOrder: 1 },
-        { name: "Inteligência artificial generativa na educação", sortOrder: 2 },
+        {
+          name: "Inteligência artificial generativa na educação",
+          sortOrder: 2,
+        },
         { name: "Tecnologias digitais e simulações interativas", sortOrder: 3 },
       ],
     });
@@ -135,7 +151,12 @@ async function main(): Promise<void> {
       data: [
         { id: 1, slug: "vestibulares", name: "Vestibulares", sortOrder: 1 },
         { id: 2, slug: "ensino-medio", name: "Ensino Médio", sortOrder: 2 },
-        { id: 3, slug: "ensino-superior", name: "Ensino Superior", sortOrder: 3 },
+        {
+          id: 3,
+          slug: "ensino-superior",
+          name: "Ensino Superior",
+          sortOrder: 3,
+        },
         { id: 4, slug: "concursos", name: "Concursos", sortOrder: 4 },
       ],
     });
@@ -161,7 +182,8 @@ async function main(): Promise<void> {
           categoryId: 4,
           slug: "esa",
           title: "ESA - Física",
-          shortDescription: "Física para o concurso da Escola de Sargentos das Armas. [EXEMPLO]",
+          shortDescription:
+            "Física para o concurso da Escola de Sargentos das Armas. [EXEMPLO]",
           icon: "shield",
           color: "#22C55E",
           status: "draft",
@@ -188,7 +210,8 @@ async function main(): Promise<void> {
           courseId: 1,
           slug: "cinematica",
           title: "Cinemática",
-          description: "Descrição do movimento: posição, velocidade, aceleração e gráficos.",
+          description:
+            "Descrição do movimento: posição, velocidade, aceleração e gráficos.",
           status: "published",
           sortOrder: 1,
         },
@@ -215,13 +238,33 @@ async function main(): Promise<void> {
 
     await tx.topic.createMany({
       data: [
-        { id: 1, moduleId: 1, title: "Movimento retilíneo uniforme", sortOrder: 1 },
-        { id: 2, moduleId: 1, title: "Movimento uniformemente variado", sortOrder: 2 },
+        {
+          id: 1,
+          moduleId: 1,
+          title: "Movimento retilíneo uniforme",
+          sortOrder: 1,
+        },
+        {
+          id: 2,
+          moduleId: 1,
+          title: "Movimento uniformemente variado",
+          sortOrder: 2,
+        },
         { id: 3, moduleId: 1, title: "Gráficos da Cinemática", sortOrder: 3 },
         { id: 4, moduleId: 2, title: "Leis de Newton", sortOrder: 1 },
         { id: 5, moduleId: 2, title: "Atrito e plano inclinado", sortOrder: 2 },
-        { id: 6, moduleId: 3, title: "Trabalho e energia cinética", sortOrder: 1 },
-        { id: 7, moduleId: 3, title: "Conservação da energia mecânica", sortOrder: 2 },
+        {
+          id: 6,
+          moduleId: 3,
+          title: "Trabalho e energia cinética",
+          sortOrder: 1,
+        },
+        {
+          id: 7,
+          moduleId: 3,
+          title: "Conservação da energia mecânica",
+          sortOrder: 2,
+        },
       ],
     });
 
@@ -273,17 +316,103 @@ async function main(): Promise<void> {
     // Aulas com videoId null aguardam vídeo ("vídeo em breve").
     await tx.lesson.createMany({
       data: [
-        { id: 1, topicId: 1, videoId: 1, slug: "o-que-e-movimento", title: "MRU: o que é movimento?", summary: "Referencial, posição e trajetória.", isPreview: true, status: "published", sortOrder: 1 },
-        { id: 2, topicId: 1, videoId: 2, slug: "velocidade-constante", title: "MRU: velocidade constante", summary: "Função horária s = s0 + v·t.", isPreview: true, status: "published", sortOrder: 2 },
-        { id: 3, topicId: 2, videoId: 4, slug: "aceleracao", title: "Aceleração", status: "published", sortOrder: 1 },
-        { id: 4, topicId: 2, videoId: 3, slug: "equacao-de-torricelli", title: "Equação de Torricelli", summary: "Aula com vídeo de teste.", status: "published", sortOrder: 2 },
-        { id: 5, topicId: 3, slug: "grafico-posicao-tempo", title: "Gráfico posição × tempo", status: "published", sortOrder: 1 },
-        { id: 6, topicId: 3, slug: "grafico-velocidade-tempo", title: "Gráfico velocidade × tempo e área", status: "published", sortOrder: 2 },
-        { id: 7, topicId: 4, slug: "primeira-lei", title: "Primeira Lei: inércia", status: "published", sortOrder: 1 },
-        { id: 8, topicId: 4, slug: "segunda-lei", title: "Segunda Lei: F = m·a", status: "published", sortOrder: 2 },
-        { id: 9, topicId: 5, slug: "forca-de-atrito", title: "Força de atrito", status: "published", sortOrder: 1 },
-        { id: 10, topicId: 6, slug: "trabalho-de-uma-forca", title: "Trabalho de uma força", status: "published", sortOrder: 1 },
-        { id: 11, topicId: 7, slug: "energia-mecanica", title: "Energia mecânica", status: "published", sortOrder: 1 },
+        {
+          id: 1,
+          topicId: 1,
+          videoId: 1,
+          slug: "o-que-e-movimento",
+          title: "MRU: o que é movimento?",
+          summary: "Referencial, posição e trajetória.",
+          isPreview: true,
+          status: "published",
+          sortOrder: 1,
+        },
+        {
+          id: 2,
+          topicId: 1,
+          videoId: 2,
+          slug: "velocidade-constante",
+          title: "MRU: velocidade constante",
+          summary: "Função horária s = s0 + v·t.",
+          isPreview: true,
+          status: "published",
+          sortOrder: 2,
+        },
+        {
+          id: 3,
+          topicId: 2,
+          videoId: 4,
+          slug: "aceleracao",
+          title: "Aceleração",
+          status: "published",
+          sortOrder: 1,
+        },
+        {
+          id: 4,
+          topicId: 2,
+          videoId: 3,
+          slug: "equacao-de-torricelli",
+          title: "Equação de Torricelli",
+          summary: "Aula com vídeo de teste.",
+          status: "published",
+          sortOrder: 2,
+        },
+        {
+          id: 5,
+          topicId: 3,
+          slug: "grafico-posicao-tempo",
+          title: "Gráfico posição × tempo",
+          status: "published",
+          sortOrder: 1,
+        },
+        {
+          id: 6,
+          topicId: 3,
+          slug: "grafico-velocidade-tempo",
+          title: "Gráfico velocidade × tempo e área",
+          status: "published",
+          sortOrder: 2,
+        },
+        {
+          id: 7,
+          topicId: 4,
+          slug: "primeira-lei",
+          title: "Primeira Lei: inércia",
+          status: "published",
+          sortOrder: 1,
+        },
+        {
+          id: 8,
+          topicId: 4,
+          slug: "segunda-lei",
+          title: "Segunda Lei: F = m·a",
+          status: "published",
+          sortOrder: 2,
+        },
+        {
+          id: 9,
+          topicId: 5,
+          slug: "forca-de-atrito",
+          title: "Força de atrito",
+          status: "published",
+          sortOrder: 1,
+        },
+        {
+          id: 10,
+          topicId: 6,
+          slug: "trabalho-de-uma-forca",
+          title: "Trabalho de uma força",
+          status: "published",
+          sortOrder: 1,
+        },
+        {
+          id: 11,
+          topicId: 7,
+          slug: "energia-mecanica",
+          title: "Energia mecânica",
+          status: "published",
+          sortOrder: 1,
+        },
       ],
     });
 
@@ -291,10 +420,36 @@ async function main(): Promise<void> {
     // Sempre só visualização na plataforma (sem download).
     await tx.material.createMany({
       data: [
-        { courseId: 1, type: "formula_sheet", title: "Formulário de Física I [EXEMPLO]", externalUrl: "https://exemplo.com/formulario.pdf", isPreview: true, sortOrder: 1 },
-        { moduleId: 1, type: "lecture_notes", title: "Notas de aula: Cinemática [EXEMPLO]", externalUrl: "https://exemplo.com/notas-cinematica.pdf", sortOrder: 1 },
-        { moduleId: 1, type: "exercise_list", title: "Lista 1: MRU e MRUV [EXEMPLO]", externalUrl: "https://exemplo.com/lista-1.pdf", sortOrder: 2 },
-        { lessonId: 1, type: "study_material", title: "Resumo da aula: referencial [EXEMPLO]", externalUrl: "https://exemplo.com/resumo-1.pdf", isPreview: true, sortOrder: 1 },
+        {
+          courseId: 1,
+          type: "formula_sheet",
+          title: "Formulário de Física I [EXEMPLO]",
+          externalUrl: "https://exemplo.com/formulario.pdf",
+          isPreview: true,
+          sortOrder: 1,
+        },
+        {
+          moduleId: 1,
+          type: "lecture_notes",
+          title: "Notas de aula: Cinemática [EXEMPLO]",
+          externalUrl: "https://exemplo.com/notas-cinematica.pdf",
+          sortOrder: 1,
+        },
+        {
+          moduleId: 1,
+          type: "exercise_list",
+          title: "Lista 1: MRU e MRUV [EXEMPLO]",
+          externalUrl: "https://exemplo.com/lista-1.pdf",
+          sortOrder: 2,
+        },
+        {
+          lessonId: 1,
+          type: "study_material",
+          title: "Resumo da aula: referencial [EXEMPLO]",
+          externalUrl: "https://exemplo.com/resumo-1.pdf",
+          isPreview: true,
+          sortOrder: 1,
+        },
       ],
     });
 
@@ -318,7 +473,8 @@ async function main(): Promise<void> {
           id: 1,
           activityId: 1,
           type: "multiple_choice",
-          statement: "No gráfico posição × tempo de um MRU, o que representa a inclinação da reta?",
+          statement:
+            "No gráfico posição × tempo de um MRU, o que representa a inclinação da reta?",
           points: "1.00",
           explanation: "A inclinação é Δs/Δt, ou seja, a velocidade.",
           sortOrder: 1,
@@ -341,10 +497,34 @@ async function main(): Promise<void> {
 
     await tx.questionOption.createMany({
       data: [
-        { questionId: 1, text: "A velocidade", isCorrect: true, feedback: "Correto: Δs/Δt.", sortOrder: 1 },
-        { questionId: 1, text: "A aceleração", isCorrect: false, feedback: "A aceleração é a inclinação do gráfico v × t.", sortOrder: 2 },
-        { questionId: 1, text: "A distância percorrida", isCorrect: false, feedback: "A distância é lida no eixo da posição.", sortOrder: 3 },
-        { questionId: 1, text: "O tempo total", isCorrect: false, feedback: "O tempo é o eixo horizontal.", sortOrder: 4 },
+        {
+          questionId: 1,
+          text: "A velocidade",
+          isCorrect: true,
+          feedback: "Correto: Δs/Δt.",
+          sortOrder: 1,
+        },
+        {
+          questionId: 1,
+          text: "A aceleração",
+          isCorrect: false,
+          feedback: "A aceleração é a inclinação do gráfico v × t.",
+          sortOrder: 2,
+        },
+        {
+          questionId: 1,
+          text: "A distância percorrida",
+          isCorrect: false,
+          feedback: "A distância é lida no eixo da posição.",
+          sortOrder: 3,
+        },
+        {
+          questionId: 1,
+          text: "O tempo total",
+          isCorrect: false,
+          feedback: "O tempo é o eixo horizontal.",
+          sortOrder: 4,
+        },
       ],
     });
 
@@ -355,7 +535,8 @@ async function main(): Promise<void> {
       data: {
         id: 1,
         name: "Assinatura mensal",
-        description: "Até 3 disciplinas. Troca de 1 disciplina por ciclo, valendo na renovação.",
+        description:
+          "Até 3 disciplinas. Troca de 1 disciplina por ciclo, valendo na renovação.",
         priceCents: 1990,
         billingCycle: "monthly",
         maxCourses: 3,
@@ -367,11 +548,21 @@ async function main(): Promise<void> {
     // Código: FIS1-DEMO-2026-TEST (guardado só como SHA-256, sem hífens).
     // -----------------------------------------------------------------
     await tx.student.create({
-      data: { id: 1, name: "Aluno Demonstração", displayName: "Aluno Demo", email: "aluno.demo@exemplo.com" },
+      data: {
+        id: 1,
+        name: "Aluno Demonstração",
+        displayName: "Aluno Demo",
+        email: "aluno.demo@exemplo.com",
+      },
     });
 
     await tx.accessCode.create({
-      data: { id: 1, studentId: 1, codeHash: sha256("FIS1DEMO2026TEST"), codeHint: "TEST" },
+      data: {
+        id: 1,
+        studentId: 1,
+        codeHash: sha256("FIS1DEMO2026TEST"),
+        codeHint: "TEST",
+      },
     });
 
     const now = new Date();
@@ -438,12 +629,23 @@ async function main(): Promise<void> {
       },
     });
 
-    await tx.postReaction.create({ data: { postId: 1, studentId: 1, type: "like" } });
+    await tx.postReaction.create({
+      data: { postId: 1, studentId: 1, type: "like" },
+    });
 
     await tx.siteSetting.createMany({
       data: [
-        { settingKey: "theme", value: { background: "#0B1622", accent: "#0EA5E9" } },
-        { settingKey: "seo", value: { title: "Paulo | Física", description: "Portfólio acadêmico e aulas de Física" } },
+        {
+          settingKey: "theme",
+          value: { background: "#0B1622", accent: "#0EA5E9" },
+        },
+        {
+          settingKey: "seo",
+          value: {
+            title: "Paulo | Física",
+            description: "Portfólio acadêmico e aulas de Física",
+          },
+        },
       ],
     });
   });

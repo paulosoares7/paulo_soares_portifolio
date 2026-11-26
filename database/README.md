@@ -51,6 +51,10 @@ Depois, crie o administrador de verdade:
 npm run create-admin -w @portfolio/database -- --email voce@dominio.com --name "Paulo"
 ```
 
+Na primeira vez, o script assume a conta de exemplo do seed (`admin@exemplo.com`,
+autora do aviso de exemplo do fórum), porque o sistema tem um único
+administrador. Rodar de novo com o mesmo e-mail troca a senha.
+
 ## Ligar e desligar o banco
 
 Comandos dentro de `database/` (ou na raiz com `-w @portfolio/database`):

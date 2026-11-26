@@ -1,0 +1,149 @@
+"use client";
+
+import { useState } from "react";
+import { saveCourse } from "@/actions/catalog";
+import { TitleSlugFields } from "@/components/forms/TitleSlugFields";
+import { Field, Input, Select, Textarea } from "@/components/ui/Field";
+import { FormFooter } from "@/components/ui/FormFooter";
+import { COURSE_ICONS, CourseIcon } from "@/lib/course-icons";
+import { COURSE_STATUSES } from "@/lib/labels";
+import { useFormAction } from "@/lib/use-form-action";
+import { courseSchema } from "@/validators/catalog";
+
+/** Valores de uma disciplina para edição. */
+export type CourseValues = {
+  id: number;
+  categoryId: number;
+  slug: string;
+  title: string;
+  shortDescription: string;
+  description: string;
+  icon: string;
+  color: string;
+  status: string;
+};
+
+type CourseFormProps = {
+  item?: CourseValues;
+  categories: { id: number; name: string }[];
+  defaultCategoryId?: number;
+};
+
+/** Dados da disciplina: seção, título, endereço, textos, ícone, cor e status. */
+export function CourseForm({ item, categories, defaultCategoryId }: CourseFormProps) {
+  const { formProps, state, pending, errors } = useFormAction(courseSchema, saveCourse);
+  const [icon, setIcon] = useState(item?.icon || "atom");
+  const [color, setColor] = useState(item?.color || "#0EA5E9");
+
+  return (
+    <form {...formProps} className="grid gap-4 md:grid-cols-2">
+      <input type="hidden" name="id" value={item?.id ?? ""} />
+      <Field label="Seção do catálogo" htmlFor="course-cat" error={errors.categoryId}>
+        <Select
+          id="course-cat"
+          name="categoryId"
+          defaultValue={item?.categoryId ?? defaultCategoryId ?? ""}
+          invalid={!!errors.categoryId}
+        >
+          <option value="" disabled>
+            Escolha...
+          </option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field
+        label="Status"
+        htmlFor="course-status"
+        error={errors.status}
+        hint="Rascunho e arquivada não aparecem no site."
+      >
+        <Select id="course-status" name="status" defaultValue={item?.status ?? "draft"}>
+          {Object.entries(COURSE_STATUSES).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <TitleSlugFields
+        prefix="course"
+        titleLabel="Título"
+        defaultTitle={item?.title}
+        defaultSlug={item?.slug}
+        errors={errors}
+        slugHint="Usado na URL: /disciplina/fisica-1"
+      />
+      <Field
+        label="Descrição curta (cartão)"
+        htmlFor="course-short"
+        error={errors.shortDescription}
+        className="md:col-span-2"
+      >
+        <Textarea
+          id="course-short"
+          name="shortDescription"
+          defaultValue={item?.shortDescription}
+          maxLength={300}
+          invalid={!!errors.shortDescription}
+        />
+      </Field>
+      <Field
+        label="Descrição completa (opcional, Markdown)"
+        htmlFor="course-desc"
+        error={errors.description}
+        className="md:col-span-2"
+      >
+        <Textarea
+          id="course-desc"
+          name="description"
+          defaultValue={item?.description}
+          className="min-h-32"
+        />
+      </Field>
+      <Field label="Ícone" htmlFor="course-icon" error={errors.icon}>
+        <div className="flex items-center gap-3">
+          <span className="rounded-btn border-border bg-surface-2 flex size-10 shrink-0 items-center justify-center border">
+            <CourseIcon name={icon} color={color} />
+          </span>
+          <Select
+            id="course-icon"
+            name="icon"
+            value={icon}
+            onChange={(event) => setIcon(event.target.value)}
+          >
+            {Object.keys(COURSE_ICONS).map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      </Field>
+      <Field label="Cor do cartão" htmlFor="course-color" error={errors.color}>
+        <div className="flex items-center gap-3">
+          <input
+            type="color"
+            aria-label="Escolher cor"
+            value={/^#[0-9a-fA-F]{6}$/.test(color) ? color : "#0EA5E9"}
+            onChange={(event) => setColor(event.target.value.toUpperCase())}
+            className="rounded-btn border-border bg-surface-2 size-10 shrink-0 cursor-pointer border"
+          />
+          <Input
+            id="course-color"
+            name="color"
+            value={color}
+            onChange={(event) => setColor(event.target.value)}
+            invalid={!!errors.color}
+          />
+        </div>
+      </Field>
+      <div className="md:col-span-2">
+        <FormFooter state={state} pending={pending} label={item ? "Salvar" : "Criar disciplina"} />
+      </div>
+    </form>
+  );
+}
