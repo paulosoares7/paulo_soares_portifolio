@@ -217,6 +217,15 @@ export const auth = betterAuth({
             await prisma.studentSession.deleteMany({
               where: { id: { in: extra.map((s) => s.id) } },
             });
+          // Entrada registrada para o painel (acessos por dia, RF29).
+          await prisma.accessLog.create({
+            data: {
+              studentId,
+              sessionId: Number(session.id),
+              event: "login",
+              ipAddress: session.ipAddress?.slice(0, 45) || null,
+            },
+          });
         },
       },
     },

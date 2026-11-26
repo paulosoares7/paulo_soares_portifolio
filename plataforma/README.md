@@ -36,10 +36,10 @@ npm run plataforma:dev                              # http://localhost:3002
 | `/atividades/[id]` | RF08, RF17 | Atividade com correção no servidor (RN16) |
 | `/sobre-o-professor` | — | Resumo do perfil, números, redes sociais, Lattes e link para o portfólio |
 | `/assinar` | RF09 | Plano e preço (o pagamento pelo Asaas chega na fase 4) |
-| `/entrar`, `/cadastrar` | RF13 | Google ou e-mail e senha; volta para `?next=` |
+| `/entrar`, `/cadastrar` | RF13 | "Continuar com Google" no topo, e-mail e senha (botão só libera com os campos válidos, erro embaixo de cada campo) e "Entrar como visitante" (vai ao catálogo); volta para `?next=` |
 | `/esqueci-a-senha`, `/redefinir-senha` | RF13 | Link por e-mail (1 h, uso único); encerra as sessões |
 | `/confirmar-email` | RF13 | Destino do link de confirmação do cadastro |
-| `/minha-area` | RF15 | Disciplinas da assinatura, formas de entrar, aparelhos e sair (versão inicial) |
+| `/minha-area` | RF15 | Painel: continuar de onde parou, assistidas por último, progresso por disciplina (`#disciplinas`), atividades recentes com média, assinatura e próxima cobrança (`#assinatura`), conquistas (em breve) e a conta |
 
 ## Login dos alunos
 
@@ -47,7 +47,17 @@ Better Auth (`src/lib/auth.ts`, rotas em `/api/auth/*`), com as tabelas do
 projeto `database` (`student_accounts`, `student_sessions`,
 `auth_verifications`, `auth_rate_limits`).
 
-- **Google:** só aparece com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`.
+- **Cabeçalho:** avatar do aluno com menu (Minha área, Minhas disciplinas,
+  Assinatura, Sair) ou "Entrar". A sessão é lida no navegador, então as
+  páginas públicas continuam estáticas.
+- **Uso do aluno:** abrir uma aula grava `lesson_progress` e o acesso ao vídeo
+  (`access_logs`, `play`, uma vez a cada 30 min); "Marcar como concluída"
+  grava `completed_at`; a atividade enviada logada grava `activity_attempts`;
+  cada login grava `access_logs` (`login`). Isso alimenta a Minha área e os
+  gráficos e relatórios do painel.
+- **Google:** só aparece com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`
+  (passo a passo em `docs/guia-login-google.md`; em desenvolvimento o botão
+  aparece desativado com o aviso).
   Se o e-mail já tem conta, o Google entra nela. Se o e-mail ainda não estava
   confirmado, a senha antiga é apagada (pode ter sido criada por outra pessoa).
 - **E-mail e senha:** só entra quem confirmou o e-mail. Cadastro com e-mail já

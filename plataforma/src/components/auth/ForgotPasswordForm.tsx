@@ -4,15 +4,16 @@ import { useState } from "react";
 import { Button } from "@portfolio/ui/Button";
 import { FormAlert, TextField } from "@/components/auth/AuthFields";
 import { authClient } from "@/lib/auth-client";
+import { useLiveForm } from "@/lib/use-live-form";
 import { authErrorMessage } from "@/lib/auth-errors";
-import { type FieldErrors, forgotPasswordSchema, validateForm } from "@/validators/auth";
+import { forgotPasswordSchema, validateForm } from "@/validators/auth";
 
 /**
  * Pede o link de redefinição. A resposta não revela se o e-mail tem conta:
  * a mensagem é a mesma nos dois casos.
  */
 export function ForgotPasswordForm() {
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const { errors, setErrors, ready, formProps } = useLiveForm(forgotPasswordSchema);
   const [message, setMessage] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [pending, setPending] = useState(false);
@@ -27,7 +28,7 @@ export function ForgotPasswordForm() {
 
   return (
     <form
-      noValidate
+      {...formProps}
       className="flex flex-col gap-4"
       onSubmit={async (event) => {
         event.preventDefault();
@@ -58,7 +59,7 @@ export function ForgotPasswordForm() {
         error={errors.email}
       />
       {message ? <FormAlert tone="error">{message}</FormAlert> : null}
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending || !ready}>
         {pending ? "Enviando..." : "Enviar link"}
       </Button>
     </form>

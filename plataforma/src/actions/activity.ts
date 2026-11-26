@@ -1,12 +1,15 @@
 "use server";
 
+import { getViewerStudentId } from "@/lib/access";
 import { getActivityPage, gradeActivity, type GradeResult } from "@/lib/activity";
+import { saveAttempt } from "@/lib/progress";
 import { activitySubmissionSchema } from "@/validators/activity";
 
 /**
  * Corrige a atividade no servidor. A checagem de acesso é refeita aqui
  * (lib/access.ts via getActivityPage): chamar a action direto não libera
  * atividade paga.
+ * Com aluno logado, guarda a tentativa (nota e respostas).
  * @param input { activityId, answers }.
  * @returns Nota e resultado por questão, ou erro.
  */
@@ -22,7 +25,11 @@ export async function submitActivity(
     return { ok: false, message: "Esta atividade é para assinantes." };
 
   try {
-    return { ok: true, result: await gradeActivity(activity.id, parsed.data.answers) };
+    const result = await gradeActivity(activity.id, parsed.data.answers);
+    // Aluno logado: a tentativa entra no histórico (Minha área e painel).
+    const studentId = await getViewerStudentId();
+    if (studentId) await saveAttempt(studentId, activity.id, parsed.data.answers, result);
+    return { ok: true, result };
   } catch (error) {
     console.error(error);
     return { ok: false, message: "Não foi possível corrigir agora. Tente de novo." };

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { UserRound } from "lucide-react";
 import { TopNav } from "@/components/layout/NavLinks";
+import { UserMenu } from "@/components/layout/UserMenu";
 import { Container } from "@portfolio/ui/Container";
 
 /**
  * Cabeçalho da plataforma: nome com ponto ciano e o selo "Aulas", menu e o
- * acesso à área do aluno.
+ * avatar do aluno (ou "Entrar").
  */
 export function SiteHeader({ displayName }: { displayName: string }) {
   // O nome do perfil já costuma terminar em ponto ("Paulo."); o ponto vira ciano.
@@ -21,15 +21,7 @@ export function SiteHeader({ displayName }: { displayName: string }) {
           <span className="text-accent text-xs font-semibold tracking-wide uppercase">Aulas</span>
         </Link>
         <TopNav />
-        <Link
-          href="/minha-area"
-          className="border-accent/60 text-accent hover:bg-accent hover:text-bg rounded-btn hidden h-9 items-center gap-2 border px-3 text-sm font-medium transition-colors md:inline-flex"
-        >
-          <UserRound className="size-4" aria-hidden /> Minha área
-        </Link>
-        <Link href="/aulas" className="text-accent text-sm font-medium md:hidden">
-          Aulas
-        </Link>
+        <UserMenu />
       </Container>
     </header>
   );

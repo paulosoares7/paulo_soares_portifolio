@@ -5,8 +5,9 @@ import { useState } from "react";
 import { Button, ButtonLink } from "@portfolio/ui/Button";
 import { FormAlert, TextField } from "@/components/auth/AuthFields";
 import { authClient } from "@/lib/auth-client";
+import { useLiveForm } from "@/lib/use-live-form";
 import { authErrorMessage } from "@/lib/auth-errors";
-import { type FieldErrors, resetPasswordSchema, validateForm } from "@/validators/auth";
+import { resetPasswordSchema, validateForm } from "@/validators/auth";
 
 /**
  * Cria a nova senha com o token do link (1 hora, uso único). Ao salvar, o
@@ -14,7 +15,7 @@ import { type FieldErrors, resetPasswordSchema, validateForm } from "@/validator
  * @param token Token que veio no link do e-mail.
  */
 export function ResetPasswordForm({ token }: { token: string }) {
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const { errors, setErrors, ready, formProps } = useLiveForm(resetPasswordSchema);
   const [message, setMessage] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [pending, setPending] = useState(false);
@@ -31,7 +32,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
 
   return (
     <form
-      noValidate
+      {...formProps}
       className="flex flex-col gap-4"
       onSubmit={async (event) => {
         event.preventDefault();
@@ -72,7 +73,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           </Link>
         </FormAlert>
       ) : null}
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending || !ready}>
         {pending ? "Salvando..." : "Salvar nova senha"}
       </Button>
     </form>

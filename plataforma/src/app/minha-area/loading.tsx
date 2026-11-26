@@ -12,6 +12,10 @@ export default function Loading() {
       <div className="mt-10 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Skeleton className="rounded-card h-72" />
         <Skeleton className="rounded-card h-72" />
+        <Skeleton className="rounded-card h-64" />
+        <Skeleton className="rounded-card h-64" />
+        <Skeleton className="rounded-card h-40" />
+        <Skeleton className="rounded-card h-40" />
       </div>
     </Container>
   );

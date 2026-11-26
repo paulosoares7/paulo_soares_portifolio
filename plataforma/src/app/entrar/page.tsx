@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthCard, FormAlert } from "@/components/auth/AuthFields";
-import { GoogleButton, OrDivider } from "@/components/auth/GoogleButton";
+import { GoogleSection, OrDivider, VisitorLink } from "@/components/auth/GoogleButton";
 import { SignInForm } from "@/components/auth/SignInForm";
 import { getViewer } from "@/lib/access";
 import { isGoogleEnabled } from "@/lib/auth";
@@ -39,13 +39,14 @@ export default async function SignInPage({ searchParams }: Props) {
           Não foi possível entrar com o Google. Tente de novo ou use e-mail e senha.
         </FormAlert>
       ) : null}
-      {isGoogleEnabled ? (
-        <>
-          <GoogleButton next={next} />
-          <OrDivider />
-        </>
-      ) : null}
+      <GoogleSection
+        next={next}
+        enabled={isGoogleEnabled}
+        showSetupHint={process.env.NODE_ENV !== "production"}
+      />
       <SignInForm next={next} />
+      <OrDivider />
+      <VisitorLink />
     </AuthCard>
   );
 }

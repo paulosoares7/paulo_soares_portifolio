@@ -6,8 +6,9 @@ import { useState } from "react";
 import { Button } from "@portfolio/ui/Button";
 import { FormAlert, TextField } from "@/components/auth/AuthFields";
 import { authClient } from "@/lib/auth-client";
+import { useLiveForm } from "@/lib/use-live-form";
 import { authErrorMessage } from "@/lib/auth-errors";
-import { type FieldErrors, signInSchema, validateForm } from "@/validators/auth";
+import { signInSchema, validateForm } from "@/validators/auth";
 
 /**
  * Entrar com e-mail e senha. O limite de tentativas e a exigência de e-mail
@@ -16,13 +17,13 @@ import { type FieldErrors, signInSchema, validateForm } from "@/validators/auth"
  */
 export function SignInForm({ next }: { next: string }) {
   const router = useRouter();
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const { errors, setErrors, ready, formProps } = useLiveForm(signInSchema);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   return (
     <form
-      noValidate
+      {...formProps}
       className="flex flex-col gap-4"
       onSubmit={async (event) => {
         event.preventDefault();
@@ -61,7 +62,7 @@ export function SignInForm({ next }: { next: string }) {
         Esqueci a senha
       </Link>
       {message ? <FormAlert tone="error">{message}</FormAlert> : null}
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending || !ready}>
         {pending ? "Entrando..." : "Entrar"}
       </Button>
     </form>

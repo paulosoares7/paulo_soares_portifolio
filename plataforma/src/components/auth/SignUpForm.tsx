@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Button } from "@portfolio/ui/Button";
 import { FormAlert, TextField } from "@/components/auth/AuthFields";
 import { authClient } from "@/lib/auth-client";
+import { useLiveForm } from "@/lib/use-live-form";
 import { authErrorMessage } from "@/lib/auth-errors";
-import { type FieldErrors, signUpSchema, validateForm } from "@/validators/auth";
+import { signUpSchema, validateForm } from "@/validators/auth";
 
 /**
  * Cadastro com nome, e-mail e senha. Depois do envio, a resposta é sempre a
@@ -13,7 +14,7 @@ import { type FieldErrors, signUpSchema, validateForm } from "@/validators/auth"
  * @param next Página para abrir depois da confirmação do e-mail.
  */
 export function SignUpForm({ next }: { next: string }) {
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const { errors, setErrors, ready, formProps } = useLiveForm(signUpSchema);
   const [message, setMessage] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -28,7 +29,7 @@ export function SignUpForm({ next }: { next: string }) {
 
   return (
     <form
-      noValidate
+      {...formProps}
       className="flex flex-col gap-4"
       onSubmit={async (event) => {
         event.preventDefault();
@@ -67,7 +68,7 @@ export function SignUpForm({ next }: { next: string }) {
         error={errors.password}
       />
       {message ? <FormAlert tone="error">{message}</FormAlert> : null}
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending || !ready}>
         {pending ? "Criando a conta..." : "Criar conta"}
       </Button>
     </form>

@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Compass } from "lucide-react";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
@@ -55,8 +57,62 @@ export function GoogleButton({ next }: { next: string }) {
       }}
       className="rounded-btn border-border bg-text text-bg hover:bg-text/90 inline-flex h-11 w-full items-center justify-center gap-3 border text-sm font-semibold transition-colors disabled:opacity-60"
     >
-      <GoogleLogo /> {pending ? "Abrindo o Google..." : "Entrar com Google"}
+      <GoogleLogo /> {pending ? "Abrindo o Google..." : "Continuar com Google"}
     </button>
+  );
+}
+
+/**
+ * Google em destaque no topo do login e do cadastro. Sem as chaves do Google
+ * (GOOGLE_CLIENT_ID/SECRET), some em produção; em desenvolvimento aparece
+ * desativado com o aviso do que falta (guia em docs/guia-login-google.md).
+ * @param next Página para voltar depois do login.
+ * @param enabled Google configurado no servidor.
+ * @param showSetupHint Mostrar o aviso de configuração (só em desenvolvimento).
+ */
+export function GoogleSection({
+  next,
+  enabled,
+  showSetupHint,
+}: {
+  next: string;
+  enabled: boolean;
+  showSetupHint: boolean;
+}) {
+  if (!enabled && !showSetupHint) return null;
+  return (
+    <>
+      {enabled ? (
+        <GoogleButton next={next} />
+      ) : (
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            disabled
+            className="rounded-btn border-border bg-text text-bg inline-flex h-11 w-full cursor-not-allowed items-center justify-center gap-3 border text-sm font-semibold opacity-50"
+          >
+            <GoogleLogo /> Continuar com Google
+          </button>
+          <p className="text-warning text-xs">
+            Google ainda não configurado: preencha GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET no
+            .env.local (passo a passo em docs/guia-login-google.md). Aviso só no desenvolvimento.
+          </p>
+        </div>
+      )}
+      <OrDivider />
+    </>
+  );
+}
+
+/** "Entrar como visitante": vai ao catálogo sem conta (aulas grátis abertas). */
+export function VisitorLink() {
+  return (
+    <Link
+      href="/aulas"
+      className="rounded-btn text-muted hover:text-text hover:bg-surface-2 inline-flex h-11 w-full items-center justify-center gap-2 text-sm font-medium transition-colors"
+    >
+      <Compass className="size-4" aria-hidden /> Entrar como visitante
+    </Link>
   );
 }
 

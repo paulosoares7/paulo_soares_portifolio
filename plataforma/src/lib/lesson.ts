@@ -159,6 +159,7 @@ export const getLessonPage = cache(
       module: { slug: module.slug, title: module.title },
       course: module.course,
       access,
+      studentId,
       player,
       sidebar,
       previous: position > 0 ? moduleLessons[position - 1] : null,

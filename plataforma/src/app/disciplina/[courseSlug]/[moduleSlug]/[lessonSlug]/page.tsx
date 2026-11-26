@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft, ChevronRight, MessagesSquare } from "lucide-react";
+import { LessonProgressButton } from "@/components/course/LessonProgressButton";
 import { LessonRow } from "@/components/course/LessonRow";
 import { MaterialList } from "@/components/course/MaterialList";
 import { VideoPlayer } from "@/components/player/VideoPlayer";
@@ -11,6 +12,7 @@ import { Container } from "@portfolio/ui/Container";
 import { Markdown } from "@portfolio/ui/Markdown";
 import { requireLoginForLocked } from "@/lib/access";
 import { getLessonPage } from "@/lib/lesson";
+import { isLessonCompleted } from "@/lib/progress";
 
 type Props = { params: Promise<{ courseSlug: string; moduleSlug: string; lessonSlug: string }> };
 
@@ -41,6 +43,7 @@ export default async function LessonPage({ params }: Props) {
     module,
     course,
     access,
+    studentId,
     player,
     sidebar,
     previous,
@@ -48,6 +51,9 @@ export default async function LessonPage({ params }: Props) {
     materials,
     discussions,
   } = data;
+  // Aluno logado com acesso: a aula entra no progresso dele.
+  const tracked = studentId !== null && access !== "locked";
+  const completed = tracked ? await isLessonCompleted(studentId, lesson.id) : false;
   const lessonHref = (slug: string) => `/disciplina/${course.slug}/${module.slug}/${slug}`;
 
   return (
@@ -76,6 +82,11 @@ export default async function LessonPage({ params }: Props) {
           </div>
           <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{lesson.title}</h1>
           {lesson.summary ? <p className="text-muted mt-2">{lesson.summary}</p> : null}
+          {tracked ? (
+            <div className="mt-4">
+              <LessonProgressButton lessonId={lesson.id} initialDone={completed} />
+            </div>
+          ) : null}
 
           {lesson.content ? (
             <section

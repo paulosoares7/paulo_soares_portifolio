@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthFields";
-import { GoogleButton, OrDivider } from "@/components/auth/GoogleButton";
+import { GoogleSection, OrDivider, VisitorLink } from "@/components/auth/GoogleButton";
 import { SignUpForm } from "@/components/auth/SignUpForm";
 import { getViewer } from "@/lib/access";
 import { isGoogleEnabled } from "@/lib/auth";
@@ -33,13 +33,14 @@ export default async function SignUpPage({ searchParams }: Props) {
         </>
       }
     >
-      {isGoogleEnabled ? (
-        <>
-          <GoogleButton next={next} />
-          <OrDivider />
-        </>
-      ) : null}
+      <GoogleSection
+        next={next}
+        enabled={isGoogleEnabled}
+        showSetupHint={process.env.NODE_ENV !== "production"}
+      />
       <SignUpForm next={next} />
+      <OrDivider />
+      <VisitorLink />
     </AuthCard>
   );
 }

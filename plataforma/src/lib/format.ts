@@ -52,3 +52,34 @@ export function formatMinutes(seconds: number | null | undefined): string | null
 export function plural(count: number, singular: string, plural: string): string {
   return `${count} ${count === 1 ? singular : plural}`;
 }
+
+const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
+/**
+ * Só a data, no fuso de Manaus.
+ * @param value Data.
+ * @returns Texto como "26 de nov. de 2026".
+ */
+export function formatDate(value: Date): string {
+  return dateFormatter.format(value);
+}
+
+/**
+ * Data de vencimento (coluna DATE, sem hora): formatada em UTC para não
+ * voltar um dia no fuso de Manaus.
+ * @param value Data guardada à meia-noite UTC.
+ * @returns Texto como "26 de nov. de 2026".
+ */
+export function formatDueDate(value: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(value);
+}
