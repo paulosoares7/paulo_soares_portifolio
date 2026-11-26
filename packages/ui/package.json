@@ -10,6 +10,7 @@
     "./Button": "./src/Button.tsx",
     "./Container": "./src/Container.tsx",
     "./Markdown": "./src/Markdown.tsx",
+    "./Skeleton": "./src/Skeleton.tsx",
     "./SocialIcon": "./src/SocialIcon.tsx"
   },
   "scripts": {

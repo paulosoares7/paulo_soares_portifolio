@@ -17,7 +17,8 @@
     "admin:dev": "npm run dev -w @portfolio/admin",
     "portfolio:dev": "npm run dev -w @portfolio/portfolio",
     "plataforma:dev": "npm run dev -w @portfolio/plataforma",
-    "site:dev": "npm run dev -w @portfolio/site"
+    "site:dev": "npm run dev -w @portfolio/site",
+    "e2e": "playwright test"
   },
   "allowScripts": {
     "prisma@7.10.1": true,
@@ -26,5 +27,8 @@
   },
   "overrides": {
     "katex": "^0.19.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0"
   }
 }

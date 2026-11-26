@@ -25,3 +25,8 @@ backups/
 
 # Vercel
 .vercel
+
+# Playwright (testes)
+e2e/.auth/
+test-results/
+playwright-report/
