@@ -4,8 +4,8 @@ Portfólio acadêmico (perfil, formação, publicações no estilo Lattes) com u
 plataforma de videoaulas por assinatura, dividida em Vestibulares, Ensino
 Médio, Ensino Superior e Concursos.
 
-> **Status:** fase 1 (`database`) e fase 2 (`admin`) prontas. Próxima: fase 3
-> (`site` público). Veja `docs/07-roadmap.md`.
+> **Status:** fases 1 (`database`), 2 (`admin`) e 3 (`site` público) prontas.
+> Próxima: fase 4 (assinatura). Veja `docs/07-roadmap.md`.
 
 ## Projetos
 
@@ -13,7 +13,7 @@ Médio, Ensino Superior e Concursos.
 | --- | --- | --- |
 | [`database/`](database/) | Estrutura do MySQL: SQL, schema Prisma, migrações e seed | 1 |
 | [`admin/`](admin/) | Painel gerencial em Next.js (`npm run admin:dev`, porta 3001) | 2 |
-| [`site/`](site/) | Site principal em Next.js | 3, 4 e 5 |
+| [`site/`](site/) | Site principal em Next.js (`npm run site:dev`, porta 3000) | 3, 4 e 5 |
 
 ## Documentação
 

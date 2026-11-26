@@ -4,13 +4,15 @@
   "description": "Portfólio acadêmico + plataforma de aulas (monorepo com npm workspaces)",
   "workspaces": [
     "database",
-    "admin"
+    "admin",
+    "site"
   ],
   "scripts": {
     "db:setup": "npm run setup -w @portfolio/database",
     "db:up": "npm run db:up -w @portfolio/database",
     "db:down": "npm run db:down -w @portfolio/database",
-    "admin:dev": "npm run dev -w @portfolio/admin"
+    "admin:dev": "npm run dev -w @portfolio/admin",
+    "site:dev": "npm run dev -w @portfolio/site"
   },
   "allowScripts": {
     "prisma@7.10.1": true,
