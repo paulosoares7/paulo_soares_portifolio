@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarPlus, CircleStop, Pencil, Plus, RefreshCw } from "lucide-react";
 import { prisma, type Prisma } from "@portfolio/database";
-import { courseCatalogOrder } from "@/lib/catalog-order";
 import { endCourtesy, syncAsaasPayments } from "@/actions/subscriptions";
-import { CourtesyForm } from "@/components/forms/CourtesyForm";
 import { ExtendCourtesyForm } from "@/components/forms/ExtendCourtesyForm";
 import { PlanForm } from "@/components/forms/PlanForm";
+import { SubscriptionEditForm } from "@/components/forms/SubscriptionEditForm";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
 import { buttonClasses } from "@/components/ui/Button";
@@ -17,6 +16,8 @@ import { ModalTrigger } from "@/components/ui/ModalTrigger";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Table, Td, Th } from "@/components/ui/Table";
 import { isAsaasConfigured } from "@/lib/asaas";
+import { loadCourseOptions } from "@/lib/course-options";
+import { effectiveMaxCourses } from "@/lib/subscription-rules";
 import {
   centsToInput,
   dateToInputInManaus,
@@ -49,7 +50,11 @@ const PAY_TONE = {
   canceled: "neutral",
 } as const;
 
-/** Plano, assinaturas, cobranças e cortesias (RF29). */
+/**
+ * Plano, assinaturas, cobranças e cortesias (RF29). O lápis edita plano,
+ * vagas, disciplinas e (na cortesia) status; ligar uma cortesia nova fica na
+ * página do aluno e em "Adicionar aluno".
+ */
 export default async function SubscriptionsPage({
   searchParams,
 }: {
@@ -60,7 +65,7 @@ export default async function SubscriptionsPage({
     status in SUBSCRIPTION_STATUSES ? { status: status as keyof typeof SUBSCRIPTION_STATUSES } : {};
   const now = new Date();
 
-  const [plans, subscriptions, payments, students, courses] = await Promise.all([
+  const [plans, subscriptions, payments, courses] = await Promise.all([
     prisma.plan.findMany({
       orderBy: { id: "asc" },
       include: { _count: { select: { subscriptions: true } } },
@@ -71,7 +76,7 @@ export default async function SubscriptionsPage({
       take: 200,
       include: {
         student: { select: { id: true, name: true, email: true } },
-        plan: { select: { name: true } },
+        plan: { select: { name: true, maxCourses: true } },
         courses: {
           orderBy: { slotNumber: "asc" },
           include: { course: { select: { title: true } } },
@@ -87,19 +92,10 @@ export default async function SubscriptionsPage({
       take: 50,
       include: { subscription: { select: { student: { select: { id: true, name: true } } } } },
     }),
-    prisma.student.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, email: true },
-    }),
-    prisma.course.findMany({
-      where: { status: { not: "archived" } },
-      orderBy: courseCatalogOrder,
-      select: { id: true, title: true },
-    }),
+    loadCourseOptions(),
   ]);
   const asaasReady = isAsaasConfigured();
-  const inOneMonth = new Date(now);
-  inOneMonth.setUTCMonth(inOneMonth.getUTCMonth() + 1);
+  const planOptions = plans.map((p) => ({ id: p.id, name: p.name, maxCourses: p.maxCourses }));
 
   return (
     <>
@@ -175,16 +171,6 @@ export default async function SubscriptionsPage({
         </Card>
 
         <Card>
-          <CardTitle>Nova cortesia</CardTitle>
-          <CourtesyForm
-            students={students.map((s) => ({ id: s.id, label: `${s.name} (${s.email})` }))}
-            plans={plans.map((p) => ({ id: p.id, name: p.name, maxCourses: p.maxCourses }))}
-            courses={courses}
-            defaultEnd={dateToInputInManaus(inOneMonth)}
-          />
-        </Card>
-
-        <Card>
           <CardTitle
             actions={
               <form className="flex items-center gap-2">
@@ -229,6 +215,9 @@ export default async function SubscriptionsPage({
               </thead>
               <tbody>
                 {subscriptions.map((s) => {
+                  const limit = effectiveMaxCourses(s);
+                  // Mostra todas as vagas: as do limite e as acima dele (saem na renovação).
+                  const slots = Math.max(limit, ...s.courses.map((c) => c.slotNumber));
                   const hasAccess =
                     s.currentPeriodEnd !== null &&
                     s.currentPeriodEnd > now &&
@@ -261,15 +250,25 @@ export default async function SubscriptionsPage({
                       </Td>
                       <Td>
                         <ol className="text-xs">
-                          {[1, 2, 3].map((slot) => {
+                          {Array.from({ length: slots }, (_, index) => index + 1).map((slot) => {
                             const taken = s.courses.find((c) => c.slotNumber === slot);
+                            const extra = slot > limit;
                             return (
-                              <li key={slot} className={taken ? "" : "text-muted"}>
+                              <li
+                                key={slot}
+                                className={extra ? "text-warning" : taken ? "" : "text-muted"}
+                              >
                                 {slot}. {taken ? taken.course.title : "livre"}
+                                {extra ? " (sai na renovação)" : ""}
                               </li>
                             );
                           })}
                         </ol>
+                        {s.maxCoursesOverride !== null ? (
+                          <p className="text-accent mt-1 text-xs">
+                            Exceção: {s.maxCoursesOverride} vaga(s) para este aluno
+                          </p>
+                        ) : null}
                         {s.courseChanges.map((change) => (
                           <p key={change.id} className="text-warning mt-1 text-xs">
                             Troca agendada (vaga {change.slotNumber} → {change.toCourse.title}) em{" "}
@@ -285,6 +284,31 @@ export default async function SubscriptionsPage({
                       </Td>
                       <Td>
                         <div className="flex justify-end gap-1">
+                          <ModalTrigger
+                            label={<Pencil className="size-4" aria-hidden />}
+                            title={`Editar assinatura de ${s.student.name}`}
+                            variant="ghost"
+                            ariaLabel="Editar assinatura"
+                            wide
+                          >
+                            <SubscriptionEditForm
+                              plans={planOptions}
+                              courses={courses}
+                              item={{
+                                id: s.id,
+                                planId: s.planId,
+                                maxCoursesOverride: s.maxCoursesOverride,
+                                courseIds: s.courses
+                                  .slice()
+                                  .sort((a, b) => a.slotNumber - b.slotNumber)
+                                  .map((c) => c.courseId),
+                                isCourtesy: s.gateway === "manual",
+                                status: s.status,
+                                statusLabel: SUBSCRIPTION_STATUSES[s.status],
+                                periodEnd: dateToInputInManaus(s.currentPeriodEnd),
+                              }}
+                            />
+                          </ModalTrigger>
                           {s.gateway === "manual" ? (
                             <>
                               <ModalTrigger

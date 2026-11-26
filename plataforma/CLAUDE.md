@@ -20,7 +20,8 @@ Leia também o `CLAUDE.md` da raiz.
 - Webhook do Asaas (`api/webhooks/asaas`): validar `ASAAS_WEBHOOK_TOKEN`,
   gravar em `payment_events` (ignorar repetido), **consultar o pagamento na
   API** e só então alterar a assinatura.
-- Vagas: até 3. Vaga vazia → preencher na hora. Vaga ocupada → agendar troca
+- Vagas: as do plano (padrão 3, até 10) ou a exceção do aluno
+  (`subscriptions.max_courses_override`). Vaga vazia → preencher na hora. Vaga ocupada → agendar troca
   (uma por ciclo) para `current_period_end`.
 - Vídeo pago: nunca expor URL permanente. PDF: nunca oferecer download.
 - Posts de aluno entram como `pending`.

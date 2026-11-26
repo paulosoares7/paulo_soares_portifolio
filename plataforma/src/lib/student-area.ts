@@ -24,6 +24,7 @@ export async function getStudentArea(studentId: number) {
         status: true,
         gateway: true,
         currentPeriodEnd: true,
+        maxCoursesOverride: true,
         plan: { select: { name: true, maxCourses: true } },
         courses: {
           orderBy: { slotNumber: "asc" },
@@ -34,6 +35,10 @@ export async function getStudentArea(studentId: number) {
   ]);
   const providers = new Set(accounts.map((a) => a.providerId));
   return {
+    // Vagas que valem: a exceção do aluno ou as do plano.
+    maxCourses: subscription
+      ? (subscription.maxCoursesOverride ?? subscription.plan.maxCourses)
+      : 0,
     signInMethods: {
       google: providers.has("google"),
       password: providers.has("credential"),

@@ -63,9 +63,14 @@ export function PlanForm({ item }: { item?: PlanValues }) {
           ))}
         </Select>
       </Field>
-      <Field label="Vagas de disciplina" htmlFor="plan-max" error={errors.maxCourses}>
+      <Field
+        label="Vagas de disciplina"
+        htmlFor="plan-max"
+        error={errors.maxCourses}
+        hint="Padrão 3. Reduzir não apaga disciplinas: as vagas a mais saem na renovação."
+      >
         <Select id="plan-max" name="maxCourses" defaultValue={item?.maxCourses ?? 3}>
-          {[1, 2, 3].map((n) => (
+          {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
             <option key={n} value={n}>
               {n}
             </option>

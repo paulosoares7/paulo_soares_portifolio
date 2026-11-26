@@ -44,7 +44,8 @@ Para trocar a senha depois, rode o mesmo comando com o mesmo e-mail.
 | --- | --- | --- |
 | Login | RF22 | E-mail e senha (bcrypt), sessão de 12 h, 5 tentativas a cada 15 min por IP (contador no banco) |
 | Esqueci a senha | RF22 | Link por e-mail (SHA-256 no banco, 1 h, uso único), mensagem igual com e sem conta, 5 pedidos a cada 15 min por IP e por e-mail; trocar a senha encerra todas as sessões |
-| Resumo | RF32 | Assinantes ativos, receita do mês (fuso de Manaus), posts pendentes, mensagens, aulas sem vídeo |
+| Resumo | RF32 | Assinantes ativos, receita do mês (fuso de Manaus), posts pendentes, mensagens, aulas sem vídeo e gráficos com filtro de período (7 dias, 30 dias, 12 meses, personalizado): público, cadastros e assinaturas, cancelamentos, receita por mês, acessos, disciplinas mais escolhidas, aulas mais assistidas (conclusão) e atividades (média de notas) |
+| Relatórios | RF32 | Assinantes, não assinantes, cancelados, cortesias, uso por disciplina e por aula, com busca e período; exporta CSV (`/api/relatorios`) e PDF (página `/relatorios/imprimir` → "Salvar como PDF") |
 | **Portfólio** | | |
 | Perfil | RF23 | Dados, foto, currículo e números de destaque |
 | Formação e atuação | RF23 | Formação acadêmica e atuação profissional (arrastar para ordenar) |
@@ -56,8 +57,8 @@ Para trocar a senha depois, rode o mesmo comando com o mesmo e-mail.
 | Materiais | RF27 | PDF (privado) ou link, por disciplina/módulo/aula, marcação de grátis |
 | Atividades | RF28 | Múltipla escolha, numérica com tolerância e aberta; LaTeX; correção manual das abertas |
 | **Plataforma de aulas** | | |
-| Assinaturas | RF29 | Plano e preço, assinaturas, cobranças e cortesias |
-| Alunos | RF29 | Como entra (Google, e-mail ou os dois), e-mail verificado, assinatura, disciplinas nas vagas, sessões (encerrar), link de senha e anonimização (LGPD) |
+| Assinaturas | RF29 | Plano e preço (vagas de 1 a 10, padrão 3), assinaturas e cobranças (só leitura). Lápis: plano, vagas só do aluno, disciplinas nas vagas e, na cortesia, status e "acesso até" |
+| Alunos | RF29 | Como entra (Google, e-mail ou os dois), e-mail verificado, assinatura, disciplinas nas vagas, sessões (encerrar), link de senha, cortesia (botão liga/desliga com dias e disciplinas), "Adicionar aluno" (convite por e-mail, cortesia opcional) e excluir (digitando o e-mail; com histórico é anonimizado e a assinatura do Asaas é cancelada) |
 | Fórum | RF30 | Fila de aprovação, avisos, resposta oficial, fixar, ocultar, responder |
 | Mensagens | RF31 | Caixa do formulário de contato |
 

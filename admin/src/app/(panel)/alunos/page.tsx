@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { UserPlus } from "lucide-react";
 import { prisma } from "@portfolio/database";
+import { NewStudentForm } from "@/components/forms/NewStudentForm";
 import { Badge } from "@/components/ui/Badge";
 import { buttonClasses } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Field";
+import { ModalTrigger } from "@/components/ui/ModalTrigger";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Table, Td, Th } from "@/components/ui/Table";
 import { formatDateTime } from "@/lib/format";
+import { loadCourseOptions } from "@/lib/course-options";
 import { signInMethodsLabel } from "@/lib/labels";
+import { INVITE_DAYS } from "@/lib/student-auth";
 
 export const metadata: Metadata = { title: "Alunos" };
 
@@ -47,11 +52,19 @@ export default async function StudentsPage({
       accounts: { select: { providerId: true } },
     },
   });
-  const openSessions = await prisma.studentSession.groupBy({
-    by: ["studentId"],
-    where: { expiresAt: { gt: now } },
-    _count: { _all: true },
-  });
+  const [openSessions, plans, courses] = await Promise.all([
+    prisma.studentSession.groupBy({
+      by: ["studentId"],
+      where: { expiresAt: { gt: now } },
+      _count: { _all: true },
+    }),
+    prisma.plan.findMany({
+      where: { isActive: true },
+      orderBy: { id: "asc" },
+      select: { id: true, name: true, maxCourses: true },
+    }),
+    loadCourseOptions(),
+  ]);
   const sessionsByStudent = new Map(openSessions.map((s) => [s.studentId, s._count._all]));
 
   return (
@@ -59,6 +72,21 @@ export default async function StudentsPage({
       <PageHeader
         title="Alunos"
         description="Como cada aluno entra, e-mail verificado, assinatura, disciplinas e sessões abertas."
+        actions={
+          <ModalTrigger
+            label={
+              <>
+                <UserPlus className="size-4" aria-hidden /> Adicionar aluno
+              </>
+            }
+            title="Adicionar aluno"
+            variant="primary"
+            size="md"
+            wide
+          >
+            <NewStudentForm plans={plans} courses={courses} inviteDays={INVITE_DAYS} />
+          </ModalTrigger>
+        }
       />
       <form className="mb-4 flex gap-3" role="search">
         <Input
@@ -117,7 +145,7 @@ export default async function StudentsPage({
                         </p>
                       </>
                     ) : (
-                      <Badge>sem acesso</Badge>
+                      <Badge>não assinante</Badge>
                     )}
                   </Td>
                   <Td className="text-xs">

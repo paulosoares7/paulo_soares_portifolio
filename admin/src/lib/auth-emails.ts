@@ -72,3 +72,24 @@ export function studentResetEmail(name: string, url: string) {
     ),
   };
 }
+
+/**
+ * Convite do aluno cadastrado pelo painel: criar a senha ou entrar com o Google.
+ * @param name Nome do aluno.
+ * @param url Link da plataforma para criar a senha (7 dias, uso único).
+ * @returns Assunto e corpo.
+ */
+export function studentInviteEmail(name: string, url: string) {
+  return {
+    subject: "Seu acesso à plataforma de aulas",
+    ...layout(
+      name,
+      [
+        "O professor cadastrou você na plataforma de aulas de Física.",
+        "Crie a sua senha pelo botão abaixo ou, se preferir, entre com o Google usando este mesmo e-mail.",
+      ],
+      { label: "Criar minha senha", url },
+      'O link vale por 7 dias e só pode ser usado uma vez. Depois disso, use "Esqueci a senha" na tela de entrada.',
+    ),
+  };
+}

@@ -8,7 +8,7 @@ na v1 · **Could** = pode ficar para a v2.
 | Ator | Quem é | O que faz |
 | --- | --- | --- |
 | Visitante | Qualquer pessoa sem assinatura (com ou sem conta) | Vê portfólio, publicações, catálogo e as aulas grátis; assina |
-| Assinante | Aluno logado com assinatura vigente | Assiste às aulas das suas até 3 disciplinas, faz atividades, posta no fórum |
+| Assinante | Aluno logado com assinatura vigente | Assiste às aulas das disciplinas das suas vagas (padrão 3), faz atividades, posta no fórum |
 | Administrador | O professor (único) | Gerencia conteúdo, assinaturas, alunos e fórum |
 | Asaas | Sistema externo | Gera as cobranças mensais e avisa pagamentos por webhook |
 
@@ -33,7 +33,7 @@ na v1 · **Could** = pode ficar para a v2.
 | RF08 | Aulas grátis (até 2 vídeos do YouTube + 1 atividade por disciplina) abertas sem assinatura | Must |
 | RF09 | Assinar: informar nome, e-mail e CPF, escolher Pix, Pix Automático ou cartão e pagar a 1ª mensalidade no Asaas | Must |
 | RF10 | Após a confirmação do 1º pagamento, liberar as disciplinas na conta do aluno e avisar por e-mail | Must |
-| RF11 | Escolher até 3 disciplinas para a assinatura; vagas vazias são preenchidas na hora | Must |
+| RF11 | Escolher as disciplinas das vagas da assinatura (padrão 3, configurável no plano e por aluno); vagas vazias são preenchidas na hora | Must |
 | RF12 | Agendar a troca de uma disciplina ocupada; a troca vale na renovação; só uma troca agendada por ciclo; pode cancelar o agendamento | Must |
 | RF13 | Criar conta e entrar com Google ou com e-mail e senha (confirmação do e-mail por link); até 2 sessões ativas; sair | Must |
 | RF14 | Esqueci a senha: link por e-mail válido por 1 hora e de uso único; ao redefinir, todas as sessões são encerradas | Must |
@@ -59,7 +59,7 @@ na v1 · **Could** = pode ficar para a v2.
 | RF29 | Plano e preço; lista de assinaturas e cobranças; assinatura de cortesia; encerramento de sessões e envio de link de redefinição de senha ao aluno | Must |
 | RF30 | Fila de aprovação do fórum, avisos e marcação de resposta oficial | Should |
 | RF31 | Caixa de mensagens de contato | Should |
-| RF32 | Resumo inicial: assinantes ativos, receita do mês, posts aguardando aprovação | Could |
+| RF32 | Resumo inicial: assinantes ativos, receita do mês, posts aguardando aprovação; gráficos com filtro de período e página de relatórios com exportação em CSV e PDF | Could |
 
 ### Database
 
@@ -92,7 +92,7 @@ na v1 · **Could** = pode ficar para a v2.
 | RN04 | Uma aula paga está acessível se a disciplina estiver numa vaga da assinatura e `current_period_end` estiver no futuro (visão `v_student_course_access`). |
 | RN05 | Cobrança vencida: a assinatura vira `past_due` e mantém o acesso até o fim do período pago; depois, `expired`. |
 | RN06 | Cancelamento: acesso até o fim do período pago, sem novas cobranças. Estorno encerra o acesso na hora. |
-| RN07 | No máximo 3 vagas (o banco garante). Vaga vazia: preenchida na hora. Vaga ocupada: uma troca por ciclo, agendada com `effective_at` = fim do período e aplicada na renovação. |
+| RN07 | Vagas: o plano define de 1 a 10 (padrão 3) e o painel pode dar uma exceção por aluno; o banco garante o teto de 10 e o código, o limite do plano/aluno. Reduzir o limite não apaga disciplinas: a vaga a mais sai na renovação. Vaga vazia: preenchida na hora. Vaga ocupada: uma troca por ciclo, agendada com `effective_at` = fim do período e aplicada na renovação. |
 | RN08 | Ao abrir uma 3ª sessão na mesma conta, a sessão mais antiga é encerrada. |
 | RN09 | Cada evento do webhook é processado uma única vez (`payment_events`). |
 | RN10 | Grátis por disciplina: até 2 aulas com vídeo do YouTube + 1 atividade, abertas sem assinatura. |

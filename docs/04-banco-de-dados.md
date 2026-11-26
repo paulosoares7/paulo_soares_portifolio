@@ -15,7 +15,7 @@ MySQL 8.0.16+.
 
 - **Conteúdo:** categoria → grupo → disciplina → módulo → tema → aula → vídeo
   (ex.: Vestibulares → PSC (UFAM) → Física 1 → Cinemática → MRU → aula)
-- **Acesso:** aluno → assinatura → vagas (até 3 disciplinas)
+- **Acesso:** aluno → assinatura → vagas (as do plano, padrão 3, até 10; exceção por aluno)
 
 ```mermaid
 erDiagram
@@ -32,7 +32,7 @@ erDiagram
     students ||--o{ student_sessions : "abre (máx. 2)"
     students ||--o{ subscriptions : assina
     plans ||--o{ subscriptions : define
-    subscriptions ||--o{ subscription_courses : "até 3 vagas"
+    subscriptions ||--o{ subscription_courses : "vagas (até 10)"
     courses ||--o{ subscription_courses : ocupa
     subscriptions ||--o{ subscription_course_changes : agenda
     subscriptions ||--o{ payments : gera
@@ -46,7 +46,7 @@ erDiagram
 
 | Regra | Como é garantida |
 | --- | --- |
-| No máximo 3 disciplinas por assinatura | `subscription_courses`: chave primária (assinatura, vaga) + CHECK vaga entre 1 e 3 |
+| No máximo 10 vagas por assinatura (o limite do plano ou do aluno é conferido no código) | `subscription_courses`: chave primária (assinatura, vaga) + CHECK vaga entre 1 e 10; CHECKs em `plans.max_courses` e `subscriptions.max_courses_override` (1 a 10) |
 | Sem disciplina repetida na assinatura | Chave única (assinatura, disciplina) |
 | Vídeo hospedado tem ID no provedor; link externo tem URL | CHECK `ck_videos_origin` |
 | Material pertence a exatamente um dono (disciplina, módulo ou aula) | CHECK `ck_materials_one_owner` |
@@ -59,7 +59,7 @@ do MySQL). Nessas chaves estrangeiras vale o padrão RESTRICT, por isso
 disciplinas são **arquivadas** e alunos são **anonimizados**, em vez de
 apagados.
 
-Nos testes, o banco recusou a 4ª vaga, a disciplina repetida, o vídeo
+Nos testes, o banco recusou a 11ª vaga, a disciplina repetida, o vídeo
 hospedado sem ID, o material com dois donos e o post sem autor.
 
 ## Visão `v_student_course_access`
@@ -525,7 +525,7 @@ Tentativas de login por IP e por e-mail (5 a cada 15 minutos).
 | `price_cents` | int(10) unsigned | não |  |  |
 | `currency` | char(3) | não |  |  |
 | `billing_cycle` | enum('monthly','quarterly','semiannual','yearly') | não |  |  |
-| `max_courses` | tinyint(3) unsigned | não |  | Vagas de disciplina |
+| `max_courses` | tinyint(3) unsigned | não |  | Vagas de disciplina (1 a 10) |
 | `is_active` | tinyint(1) | não |  |  |
 | `created_at` | datetime(3) | não |  |  |
 | `updated_at` | datetime(3) | não |  |  |
@@ -543,6 +543,7 @@ Tentativas de login por IP e por e-mail (5 a cada 15 minutos).
 | `gateway_subscription_id` | varchar(100) | sim |  | sub_... no Asaas |
 | `billing_type` | enum('pix','pix_automatic','credit_card','boleto') | sim |  |  |
 | `price_cents` | int(10) unsigned | não |  | Preço contratado (não muda se o plano mudar) |
+| `max_courses_override` | tinyint(3) unsigned | sim |  | Vagas só deste aluno (1 a 10); NULL = as do plano |
 | `current_period_start` | datetime(3) | sim |  |  |
 | `current_period_end` | datetime(3) | sim |  | Acesso vale até aqui |
 | `canceled_at` | datetime(3) | sim |  |  |
@@ -554,7 +555,7 @@ Tentativas de login por IP e por e-mail (5 a cada 15 minutos).
 | Coluna | Tipo | Nulo | Chave | Observação |
 | --- | --- | --- | --- | --- |
 | `subscription_id` | int(10) unsigned | não | PK FK → `subscriptions` |  |
-| `slot_number` | tinyint(3) unsigned | não | PK |  |
+| `slot_number` | tinyint(3) unsigned | não | PK | 1 a 10 |
 | `course_id` | int(10) unsigned | não | índice FK → `courses` |  |
 | `assigned_at` | datetime(3) | não |  |  |
 

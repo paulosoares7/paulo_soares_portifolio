@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { KeyRound, LogOut, UserX } from "lucide-react";
+import { KeyRound, LogOut } from "lucide-react";
 import { prisma } from "@portfolio/database";
-import {
-  anonymizeStudent,
-  endAllSessions,
-  endSession,
-  sendPasswordResetLink,
-} from "@/actions/students";
+import { endAllSessions, endSession, sendPasswordResetLink } from "@/actions/students";
+import { CourtesyToggle } from "@/components/forms/CourtesyToggle";
+import { DeleteStudentForm } from "@/components/forms/DeleteStudentForm";
 import { StudentForm } from "@/components/forms/StudentForm";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Badge } from "@/components/ui/Badge";
@@ -15,7 +12,10 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Table, Td, Th } from "@/components/ui/Table";
-import { formatDateTime } from "@/lib/format";
+import { loadCourseOptions } from "@/lib/course-options";
+import { formatDate, formatDateTime } from "@/lib/format";
+import { getStudentFootprint, mustAnonymize } from "@/lib/student-removal";
+import { ACCESS_STATUSES } from "@/lib/subscription-rules";
 import { signInMethodsLabel, SUBSCRIPTION_STATUSES } from "@/lib/labels";
 
 export const metadata: Metadata = { title: "Aluno" };
@@ -29,8 +29,8 @@ const EVENT_LABEL = {
 } as const;
 
 /**
- * Aluno (RF29): dados, como entra, link de senha, sessões, assinaturas,
- * acessos e anonimização.
+ * Aluno (RF29): dados, como entra, link de senha, cortesia (ligar e
+ * desligar), sessões, assinaturas, acessos e exclusão (ou anonimização).
  */
 export default async function StudentPage({ params }: { params: Promise<{ id: string }> }) {
   const id = Number((await params).id);
@@ -54,12 +54,29 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
     },
   });
   if (!student) notFound();
-  const logs = await prisma.accessLog.findMany({
-    where: { studentId: id },
-    orderBy: { createdAt: "desc" },
-    take: 20,
-    include: { lesson: { select: { title: true } }, material: { select: { title: true } } },
-  });
+  const [logs, footprint, plans, courses] = await Promise.all([
+    prisma.accessLog.findMany({
+      where: { studentId: id },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: { lesson: { select: { title: true } }, material: { select: { title: true } } },
+    }),
+    getStudentFootprint(id),
+    prisma.plan.findMany({
+      where: { isActive: true },
+      orderBy: { id: "asc" },
+      select: { id: true, name: true, maxCourses: true },
+    }),
+    loadCourseOptions(),
+  ]);
+  const vigente = student.subscriptions.find(
+    (s) =>
+      (ACCESS_STATUSES as readonly string[]).includes(s.status) &&
+      s.currentPeriodEnd !== null &&
+      s.currentPeriodEnd > now,
+  );
+  const courtesy = vigente?.gateway === "manual" ? vigente : null;
+  const anonymize = mustAnonymize(footprint);
 
   const sessions = student.sessions;
   const openSessions = sessions.filter((s) => s.expiresAt > now);
@@ -120,6 +137,29 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
             <p className="text-muted mt-3 text-xs">
               O link vale por 1 hora e só uma vez. Serve também para o aluno de cortesia criar a
               primeira senha. Ao salvar, o aluno sai de todos os aparelhos.
+            </p>
+          </Card>
+        )}
+
+        {anonymized ? null : (
+          <Card>
+            <CardTitle>Cortesia</CardTitle>
+            <CourtesyToggle
+              studentId={student.id}
+              plans={plans}
+              courses={courses}
+              active={
+                courtesy
+                  ? { subscriptionId: courtesy.id, endLabel: formatDate(courtesy.currentPeriodEnd) }
+                  : null
+              }
+              blockedReason={
+                vigente && !courtesy ? "O aluno já tem assinatura paga vigente." : undefined
+              }
+            />
+            <p className="text-muted mt-3 text-xs">
+              Para mudar disciplinas, vagas ou a data de uma cortesia ligada, use o lápis em
+              Assinaturas.
             </p>
           </Card>
         )}
@@ -232,20 +272,43 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
 
         {anonymized ? null : (
           <Card className="border-danger/40">
-            <CardTitle>Anonimizar (LGPD)</CardTitle>
-            <p className="text-muted mb-3 text-sm">
-              A pedido do aluno: apaga nome, e-mail, foto e IPs, remove as formas de entrar e
-              encerra as sessões. Assinaturas e cobranças ficam como registro financeiro. Não dá
-              para desfazer.
-            </p>
-            <ActionButton
-              action={anonymizeStudent.bind(null, student.id)}
-              confirm={`Anonimizar ${student.name}? Não dá para desfazer.`}
-              variant="danger"
-              size="md"
-            >
-              <UserX className="size-4" aria-hidden /> Anonimizar aluno
-            </ActionButton>
+            <CardTitle>
+              {anonymize ? "Excluir aluno (será anonimizado)" : "Excluir aluno"}
+            </CardTitle>
+            {anonymize ? (
+              <div className="text-muted mb-4 flex flex-col gap-2 text-sm">
+                <p>
+                  Este aluno tem histórico na plataforma, por isso não é apagado: ele é{" "}
+                  <strong className="text-text">anonimizado</strong> (LGPD). Não dá para desfazer.
+                </p>
+                <ul className="list-disc pl-5">
+                  <li>
+                    Nome, e-mail, foto e IPs são apagados; as formas de entrar e as sessões saem.
+                  </li>
+                  <li>As assinaturas com acesso são encerradas agora.</li>
+                  {footprint.activeAsaasIds.length ? (
+                    <li>
+                      {footprint.activeAsaasIds.length} assinatura(s) do Asaas serão canceladas lá
+                      (param de cobrar).
+                    </li>
+                  ) : null}
+                  <li>
+                    Ficam como registro: {footprint.payments} cobrança(s), {footprint.forumPosts}{" "}
+                    post(s) no fórum (com autor &quot;Anônimo&quot;), {footprint.lessonProgress}{" "}
+                    aula(s) com progresso, {footprint.activityAttempts} tentativa(s) de atividade e{" "}
+                    {footprint.accessLogs} acesso(s) registrados.
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <p className="text-muted mb-4 text-sm">
+                Este aluno não tem cobranças, posts nem histórico: ele será{" "}
+                <strong className="text-text">apagado de vez</strong>, junto com
+                {footprint.courtesies ? ` ${footprint.courtesies} cortesia(s),` : ""} as formas de
+                entrar e as sessões. Não dá para desfazer.
+              </p>
+            )}
+            <DeleteStudentForm studentId={student.id} email={student.email} anonymize={anonymize} />
           </Card>
         )}
       </div>

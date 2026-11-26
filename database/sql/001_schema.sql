@@ -22,9 +22,10 @@
 --   6. Atividades         7. Alunos e login        8. Assinaturas e pagamentos
 --   9. Progresso e logs  10. Fórum e avisos      11. Site
 --
--- Modelo de venda: assinatura mensal (Asaas). O aluno escolhe até 3
--- disciplinas (vagas). Pode trocar UMA disciplina por ciclo; a troca vale
--- a partir da próxima renovação.
+-- Modelo de venda: assinatura mensal (Asaas). O aluno escolhe as disciplinas
+-- das vagas do plano (padrão 3, até 10; exceção por aluno na assinatura).
+-- Pode trocar UMA disciplina por ciclo; a troca vale a partir da próxima
+-- renovação.
 -- =====================================================================
 
 CREATE DATABASE IF NOT EXISTS portfolio
@@ -508,7 +509,7 @@ CREATE TABLE auth_rate_limits (
 -- 8. ASSINATURAS E PAGAMENTOS (gateway: Asaas)
 -- =====================================================================
 
--- Planos à venda. Hoje: um plano mensal com até 3 disciplinas.
+-- Planos à venda. Hoje: um plano mensal com 3 vagas de disciplina.
 CREATE TABLE plans (
   id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name          VARCHAR(120) NOT NULL,
@@ -516,11 +517,11 @@ CREATE TABLE plans (
   price_cents   INT UNSIGNED NOT NULL,
   currency      CHAR(3) NOT NULL DEFAULT 'BRL',
   billing_cycle ENUM('monthly','quarterly','semiannual','yearly') NOT NULL DEFAULT 'monthly',
-  max_courses   TINYINT UNSIGNED NOT NULL DEFAULT 3 COMMENT 'Vagas de disciplina',
+  max_courses   TINYINT UNSIGNED NOT NULL DEFAULT 3 COMMENT 'Vagas de disciplina (1 a 10)',
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   created_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at    DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  CONSTRAINT ck_plans_max_courses CHECK (max_courses BETWEEN 1 AND 3)
+  CONSTRAINT ck_plans_max_courses CHECK (max_courses BETWEEN 1 AND 10)
 ) ENGINE=InnoDB;
 
 -- Assinatura do aluno. Renova sozinha até ser cancelada.
@@ -536,6 +537,7 @@ CREATE TABLE subscriptions (
   gateway_subscription_id VARCHAR(100) NULL COMMENT 'sub_... no Asaas',
   billing_type            ENUM('pix','pix_automatic','credit_card','boleto') NULL,
   price_cents             INT UNSIGNED NOT NULL COMMENT 'Preço contratado (não muda se o plano mudar)',
+  max_courses_override    TINYINT UNSIGNED NULL COMMENT 'Vagas só deste aluno (1 a 10); NULL = as do plano',
   current_period_start    DATETIME(3) NULL,
   current_period_end      DATETIME(3) NULL COMMENT 'Acesso vale até aqui',
   canceled_at             DATETIME(3) NULL,
@@ -543,12 +545,15 @@ CREATE TABLE subscriptions (
   updated_at              DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   UNIQUE KEY uq_subscriptions_gateway (gateway, gateway_subscription_id),
   KEY ix_subscriptions_student (student_id, status),
+  CONSTRAINT ck_subscriptions_max_courses CHECK (max_courses_override IS NULL OR max_courses_override BETWEEN 1 AND 10),
   CONSTRAINT fk_subscriptions_student FOREIGN KEY (student_id) REFERENCES students(id),
   CONSTRAINT fk_subscriptions_plan    FOREIGN KEY (plan_id)    REFERENCES plans(id)
 ) ENGINE=InnoDB;
 
--- Vagas da assinatura: no máximo 3 (slot 1, 2 e 3), sem repetir disciplina.
--- O limite é garantido pelo próprio banco (CHECK + chave primária).
+-- Vagas da assinatura: slot de 1 a 10, sem repetir disciplina. O teto de 10
+-- fica no banco (CHECK + chave primária); o limite do plano ou do aluno é
+-- conferido no código. Reduzir o limite não apaga vagas: a vaga a mais sai
+-- na renovação.
 CREATE TABLE subscription_courses (
   subscription_id INT UNSIGNED NOT NULL,
   slot_number     TINYINT UNSIGNED NOT NULL,
@@ -556,7 +561,7 @@ CREATE TABLE subscription_courses (
   assigned_at     DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (subscription_id, slot_number),
   UNIQUE KEY uq_subscription_course (subscription_id, course_id),
-  CONSTRAINT ck_subscription_slot CHECK (slot_number BETWEEN 1 AND 3),
+  CONSTRAINT ck_subscription_slot CHECK (slot_number BETWEEN 1 AND 10),
   CONSTRAINT fk_sub_courses_subscription FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE CASCADE,
   CONSTRAINT fk_sub_courses_course       FOREIGN KEY (course_id)       REFERENCES courses(id)
 ) ENGINE=InnoDB;
@@ -574,7 +579,7 @@ CREATE TABLE subscription_course_changes (
   effective_at    DATETIME(3) NOT NULL,
   applied_at      DATETIME(3) NULL,
   KEY ix_changes_subscription (subscription_id, status),
-  CONSTRAINT ck_changes_slot CHECK (slot_number BETWEEN 1 AND 3),
+  CONSTRAINT ck_changes_slot CHECK (slot_number BETWEEN 1 AND 10),
   CONSTRAINT fk_changes_subscription FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE CASCADE,
   CONSTRAINT fk_changes_from FOREIGN KEY (from_course_id) REFERENCES courses(id),
   CONSTRAINT fk_changes_to   FOREIGN KEY (to_course_id)   REFERENCES courses(id)

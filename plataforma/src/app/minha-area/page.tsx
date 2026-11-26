@@ -22,7 +22,7 @@ export const metadata: Metadata = { title: "Minha área", robots: { index: false
 export default async function StudentAreaPage() {
   const viewer = await getViewer();
   if (!viewer) redirect(loginUrl("/minha-area"));
-  const { signInMethods, openSessions, subscription } = await getStudentArea(viewer.id);
+  const { signInMethods, openSessions, subscription, maxCourses } = await getStudentArea(viewer.id);
   const methods = [
     signInMethods.google ? "Google" : null,
     signInMethods.password ? "e-mail e senha" : null,
@@ -65,7 +65,7 @@ export default async function StudentAreaPage() {
                   </li>
                 ))}
                 {Array.from({
-                  length: Math.max(0, subscription.plan.maxCourses - subscription.courses.length),
+                  length: Math.max(0, maxCourses - subscription.courses.length),
                 }).map((_, index) => (
                   <li
                     key={`vaga-${index}`}
