@@ -209,7 +209,7 @@ export function MaterialForm({ item, tree, storageReady, defaultCourseId }: Mate
         <Checkbox
           name="isPreview"
           defaultChecked={item?.isPreview ?? false}
-          label="Grátis (visível sem código)"
+          label="Grátis (visível sem login)"
         />
       </div>
       <p className="text-muted text-xs md:col-span-2">

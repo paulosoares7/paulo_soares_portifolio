@@ -4,8 +4,9 @@ Portfólio acadêmico (perfil, formação, publicações no estilo Lattes) com u
 plataforma de videoaulas por assinatura, dividida em Vestibulares, Ensino
 Médio, Ensino Superior e Concursos.
 
-> **Status:** fases 1 (`database`), 2 (`admin`) e 3 (`site` público) prontas.
-> Próxima: fase 4 (assinatura). Veja `docs/07-roadmap.md`.
+> **Status:** fases 1 (`database`), 2 (`admin`) e 3 (`portfolio` e
+> `plataforma`) quase prontas; faltam o tema claro/escuro e o PWA. Depois vêm
+> a publicação e a fase 4 (assinatura). Veja `docs/07-roadmap.md`.
 
 ## Projetos
 
@@ -13,7 +14,9 @@ Médio, Ensino Superior e Concursos.
 | --- | --- | --- |
 | [`database/`](database/) | Estrutura do MySQL: SQL, schema Prisma, migrações e seed | 1 |
 | [`admin/`](admin/) | Painel gerencial em Next.js (`npm run admin:dev`, porta 3001) | 2 |
-| [`site/`](site/) | Site principal em Next.js (`npm run site:dev`, porta 3000) | 3, 4 e 5 |
+| [`portfolio/`](portfolio/) | Portfólio em Next.js (`npm run portfolio:dev`, porta 3000) | 3 |
+| [`plataforma/`](plataforma/) | Plataforma de aulas em Next.js (`npm run plataforma:dev`, porta 3002) | 3, 4 e 5 |
+| [`packages/ui/`](packages/ui/) | Tema e componentes comuns ao portfólio e à plataforma | 3 |
 
 ## Documentação
 
@@ -21,20 +24,20 @@ Médio, Ensino Superior e Concursos.
 | --- | --- |
 | [01 — Decisões](docs/01-decisoes.md) | Pagamento, acesso, vídeo, anti-pirataria, Lattes/ORCID, hospedagem |
 | [02 — Requisitos](docs/02-requisitos.md) | Atores, requisitos funcionais e não funcionais, regras de negócio |
-| [03 — Arquitetura](docs/03-arquitetura.md) | Como os três projetos e os serviços externos se ligam |
+| [03 — Arquitetura](docs/03-arquitetura.md) | Como os projetos e os serviços externos se ligam |
 | [04 — Banco de dados](docs/04-banco-de-dados.md) | Dicionário das 42 tabelas |
-| [05 — Fluxos](docs/05-fluxos.md) | Assinatura, código de acesso, troca de disciplina, reprodução |
+| [05 — Fluxos](docs/05-fluxos.md) | Login, assinatura, troca de disciplina, reprodução |
 | [06 — Interface](docs/06-interface.md) | Mapa de páginas, inspirações e tokens visuais |
-| [07 — Roadmap](docs/07-roadmap.md) | Fases e critérios para avançar |
+| [07 — Roadmap](docs/07-roadmap.md) | Fases, status real e critérios para avançar |
+| [Pedidos](docs/prompts/README.md) | Pedidos prontos para o Claude Code (auditoria, modo offline) |
 
 As regras de código que o Claude Code segue estão em [`CLAUDE.md`](CLAUDE.md).
 
 ## Como continuar no Claude Code
 
 1. Abra o Claude Code na raiz deste repositório.
-2. Comece pela fase 1, por exemplo:
-   *"Leia o CLAUDE.md, o docs/04-banco-de-dados.md e o database/README.md.
-   Monte o projeto database conforme a fase 1 do roadmap."*
+2. Para saber o que falta, peça: *"Execute o pedido de
+   docs/prompts/auditoria-e-continuacao.md."*
 3. Ao terminar cada fase, confira o critério de avanço em
    `docs/07-roadmap.md` antes de passar para a próxima.
 

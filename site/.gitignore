@@ -1,6 +1,0 @@
-.next/
-next-env.d.ts
-*.tsbuildinfo
-
-# Gerado pelo next dev (instruções para assistentes de IA); não é do projeto.
-AGENTS.md

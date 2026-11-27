@@ -7,9 +7,3 @@ export type ActionState = {
   message?: string;
   fieldErrors?: FieldErrors;
 };
-
-/** Resultado de ações que geram um código de acesso (mostrado uma única vez). */
-export type CodeActionState = ActionState & {
-  code?: string;
-  emailed?: boolean;
-};

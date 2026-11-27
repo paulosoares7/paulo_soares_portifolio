@@ -1,36 +1,28 @@
 # 05 — Fluxos
 
-## 1. Assinatura e código de acesso
+## 1. Assinatura
 
-O código só é gerado depois que o servidor confirma o 1º pagamento na API do
-Asaas.
+A assinatura fica ligada à conta do aluno (RN01, RN02): ele entra com Google
+ou com e-mail e senha antes de assinar. As disciplinas só são liberadas
+depois que o servidor confirma o 1º pagamento na API do Asaas.
 
 ```mermaid
 sequenceDiagram
     actor Aluno
-    participant Site
+    participant Plataforma
     participant DB as MySQL
     participant Asaas
-    participant Email as Resend
-    Aluno->>Site: Assinar (nome, e-mail, CPF, forma de pagamento)
-    Site->>Asaas: Cria cliente + assinatura mensal
-    Site->>DB: students + subscriptions (pending)
+    Aluno->>Plataforma: Entra na conta e assina (CPF, forma de pagamento)
+    Plataforma->>Asaas: Cria cliente + assinatura mensal
+    Plataforma->>DB: subscriptions (pending) ligada ao aluno
     Asaas-->>Aluno: 1ª cobrança (QR Pix / Pix Automático / cartão)
     Aluno->>Asaas: Paga
-    Asaas->>Site: Webhook PAYMENT_RECEIVED / CONFIRMED
-    Site->>DB: Grava payment_events (ignora repetido)
-    Site->>Asaas: Consulta o pagamento (confirmação)
-    Site->>DB: payments + subscriptions (active, período +1 mês)
-    Site->>DB: access_codes (só o hash)
-    Site->>Email: Envia o código
-    Site-->>Aluno: Tela de sucesso com o código + escolha das disciplinas
+    Asaas->>Plataforma: Webhook PAYMENT_RECEIVED / CONFIRMED
+    Plataforma->>DB: Grava payment_events (ignora repetido)
+    Plataforma->>Asaas: Consulta o pagamento (confirmação)
+    Plataforma->>DB: payments + subscriptions (active, período +1 mês)
+    Plataforma-->>Aluno: Minha área com a escolha das disciplinas
 ```
-
-**Código:** 16 caracteres sorteados com `crypto.randomBytes` num alfabeto sem
-caracteres ambíguos (sem 0/O, 1/I/L), exibidos como `XXXX-XXXX-XXXX-XXXX`.
-São cerca de 10²⁴ combinações; com o limite de 5 tentativas a cada 15 min,
-adivinhar é inviável. O banco guarda o SHA-256 do código sem hífens e em
-maiúsculas.
 
 ## 2. Renovação, atraso e cancelamento
 
@@ -39,7 +31,7 @@ maiúsculas.
 | Pagamento recebido/confirmado | `payments` atualizado; `current_period_end` avança 1 ciclo; trocas agendadas são aplicadas |
 | Cobrança vencida | Assinatura `past_due`; acesso continua até `current_period_end` |
 | Período terminou sem pagamento | Vercel Cron marca `expired`; acesso encerra |
-| Aluno cancela na minha área | Site cancela a assinatura no Asaas; status `canceled`; acesso até `current_period_end` |
+| Aluno cancela na minha área | A plataforma cancela a assinatura no Asaas; status `canceled`; acesso até `current_period_end` |
 | Estorno | Assinatura `canceled` e `current_period_end` = agora |
 
 ## 3. Vagas e troca de disciplina
@@ -57,22 +49,38 @@ flowchart TD
 
 O aluno pode cancelar uma troca agendada antes da renovação.
 
-## 4. Entrada com código
+## 4. Login do aluno
 
-1. Aluno digita o código em `/entrar`.
-2. O servidor normaliza (remove hífens, maiúsculas), calcula o SHA-256 e busca em `access_codes`.
-3. Código ativo → cria `student_sessions`; se já houver 2 sessões, encerra a mais antiga.
-4. Cookie httpOnly com o token da sessão. Tudo registrado em `access_logs`.
+1. **Criar conta:** com Google, ou com nome, e-mail e senha em `/cadastrar`.
+   No cadastro por senha, o aluno recebe um link de confirmação por e-mail e
+   só entra com senha depois de confirmar (RN01).
+2. **Entrar:** com Google, ou com e-mail e senha em `/entrar`. Google com um
+   e-mail já cadastrado entra na mesma conta (RN01).
+3. **Limite de tentativas:** 5 erros a cada 15 min por IP e por e-mail (RNF03).
+4. **Sessões:** cookie httpOnly assinado (Better Auth). Até 2 sessões por
+   aluno: ao abrir a 3ª, a mais antiga é encerrada (RN08). Cada entrada fica
+   em `access_logs`.
+5. **Esqueci a senha:** link por e-mail válido por 1 hora e de uso único; ao
+   redefinir, todas as sessões são encerradas (RF14).
+6. **Visitante:** "Entrar como visitante" leva ao catálogo sem conta, com as
+   aulas grátis abertas.
+7. **Pelo painel:** o admin pode criar o aluno (o convite chega por e-mail
+   para ele definir a senha), encerrar as sessões e enviar o link de
+   redefinição (RF29).
 
 ## 5. Reprodução de uma aula
 
 1. A página da aula pede um token a `/api/player-token`.
 2. O servidor confere: aula grátis **ou** disciplina em `v_student_course_access`.
 3. Vídeo Bunny → devolve URL assinada válida por 2 h. Link externo → devolve a URL.
-4. O player mostra a marca d'água (nome do aluno + 4 últimos caracteres do código), que muda de posição.
+4. O player mostra a marca d'água com o nome do aluno, que muda de posição.
 5. A cada 15 s o player envia a posição para `/api/progress`; com 90% assistido, a aula fica concluída.
 
 ## 6. Material em PDF
+
+Vale para PDFs enviados ao storage. Material por link externo (Google Drive,
+OneDrive, Dropbox ou site) abre pelo próprio link, sem essa proteção; o
+endereço só vai para a página de quem tem acesso.
 
 1. A página pede o PDF a `/api/materials/view`.
 2. O servidor confere o acesso e devolve uma URL assinada de curta duração.

@@ -6,17 +6,21 @@ combinados para o projeto. As decisões completas estão em `docs/`.
 ## O que é
 
 Portfólio acadêmico de um professor de Física + plataforma de aulas por
-assinatura. São **três projetos independentes** neste repositório:
+assinatura. São **quatro projetos independentes** neste repositório, mais um
+pacote visual comum:
 
 | Pasta | Projeto | Papel |
 | --- | --- | --- |
 | `database/` | Banco de dados | Única fonte da estrutura do MySQL (SQL, Prisma, seed) |
-| `admin/` | Painel gerencial (Next.js) | Cadastra tudo que o site exibe |
-| `site/` | Site principal (Next.js) | Portfólio, catálogo, aulas, assinatura, fórum |
+| `admin/` | Painel gerencial (Next.js, porta 3001) | Cadastra tudo que o portfólio e a plataforma exibem |
+| `portfolio/` | Portfólio (Next.js, porta 3000) | Home, Sobre, Publicações, Contato e a seção Aulas |
+| `plataforma/` | Plataforma de aulas (Next.js, porta 3002) | Catálogo, aulas, login dos alunos, minha área, assinatura, fórum |
+| `packages/ui/` | Pacote `@portfolio/ui` | Tema e componentes visuais comuns ao portfólio e à plataforma |
 
-`admin` e `site` **não conversam entre si**. Os dois usam o mesmo banco por
-meio do pacote interno `@portfolio/database` (Prisma Client exportado por
-`database/`). Nenhum dos dois define tabelas.
+Os apps **não conversam entre si**: todos usam o mesmo banco por meio do
+pacote interno `@portfolio/database` (Prisma Client exportado por
+`database/`). Nenhum deles define tabelas. Entre o portfólio e a plataforma,
+só links comuns (`<a>`).
 
 ## Como trabalhar
 
@@ -24,7 +28,7 @@ meio do pacote interno `@portfolio/database` (Prisma Client exportado por
 - Antes de criar algo, leia o `CLAUDE.md` e o `README.md` da pasta do projeto.
 - **Não invente regra de negócio.** Se algo não estiver em `docs/`, pergunte.
 - Mudou o banco? A mudança começa em `database/` (SQL + migração Prisma)
-  e só depois chega ao `admin` e ao `site`.
+  e só depois chega ao `admin`, ao `portfolio` e à `plataforma`.
 - Não rode comandos destrutivos no banco (DROP, TRUNCATE, `prisma migrate reset`)
   sem pedir confirmação.
 
@@ -37,7 +41,7 @@ meio do pacote interno `@portfolio/database` (Prisma Client exportado por
 - Pagamento: **Asaas** (assinatura mensal; Pix, Pix Automático, cartão)
 - Vídeo: Bunny Stream (pago) e YouTube (aulas grátis); MP4 por link como alternativa
 - E-mail transacional: Resend
-- Hospedagem: Vercel (os dois apps) + MySQL gerenciado externo
+- Hospedagem: Vercel (os três apps) + MySQL gerenciado externo
 
 ## Convenções de código
 

@@ -55,7 +55,7 @@ export async function saveMaterial(_state: ActionState, formData: FormData): Pro
   return { ok: true, message: "Material salvo." };
 }
 
-/** Liga/desliga "grátis" (visível sem código). */
+/** Liga/desliga "grátis" (visível sem login). */
 export async function toggleMaterialPreview(id: number, value: boolean): Promise<ActionState> {
   await requireAdmin();
   try {

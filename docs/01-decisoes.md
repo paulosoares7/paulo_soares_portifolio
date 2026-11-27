@@ -33,7 +33,7 @@ Stream** e as aulas grátis no **YouTube**. Os dois apps ficam na **Vercel**.
 | ORCID | Sincronização pela API pública do ORCID | Leitura de dados públicos. A API pública é para uso não comercial: usar só na vitrine de publicações. |
 | Lattes e ORCID no seed | Genéricos (`0000000000000000` e `0000-0000-0000-0000`) | O professor preenche no painel quando tiver os dados. |
 | Redes sociais | Apenas links com ícones | APIs de Instagram/LinkedIn exigem aprovação de app. |
-| Hospedagem | **Vercel** para `site` e `admin` + MySQL gerenciado externo | O plano Hobby é só para uso pessoal e não comercial. Pode desenvolver no Hobby, mas é preciso passar para o **Pro** antes da primeira cobrança real. A Vercel não hospeda MySQL. |
+| Hospedagem | **Vercel** para `portfolio`, `plataforma` e `admin` + MySQL gerenciado externo | O plano Hobby é só para uso pessoal e não comercial. Pode desenvolver no Hobby, mas é preciso passar para o **Pro** antes da primeira cobrança real. A Vercel não hospeda MySQL. |
 | Prisma | ORM para acessar o MySQL (não é gateway de pagamento) | Tipagem automática em TypeScript. |
 | Organização | Três projetos no mesmo repositório (npm workspaces) | Cada um com build e deploy próprios. |
 

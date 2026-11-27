@@ -7,8 +7,7 @@
     "packages/ui",
     "admin",
     "portfolio",
-    "plataforma",
-    "site"
+    "plataforma"
   ],
   "scripts": {
     "db:setup": "npm run setup -w @portfolio/database",
@@ -17,7 +16,6 @@
     "admin:dev": "npm run dev -w @portfolio/admin",
     "portfolio:dev": "npm run dev -w @portfolio/portfolio",
     "plataforma:dev": "npm run dev -w @portfolio/plataforma",
-    "site:dev": "npm run dev -w @portfolio/site",
     "e2e": "playwright test"
   },
   "allowScripts": {

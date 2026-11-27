@@ -1,6 +1,6 @@
 # database — Projeto 1
 
-Única fonte da estrutura do MySQL. Os projetos `admin` e `site` importam o
+Única fonte da estrutura do MySQL. Os projetos `admin`, `portfolio` e `plataforma` importam o
 Prisma Client exportado daqui (`@portfolio/database`) e nunca definem tabelas.
 
 ```ts

@@ -2,7 +2,7 @@
   "name": "@portfolio/database",
   "version": "0.1.0",
   "private": true,
-  "description": "Schema, migrações e Prisma Client do MySQL (usado por admin e site)",
+  "description": "Schema, migrações e Prisma Client do MySQL (usado por admin, portfolio e plataforma)",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
