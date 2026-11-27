@@ -43,6 +43,19 @@ export function formatMinutes(seconds: number | null | undefined): string | null
 }
 
 /**
+ * Tempo de estudo somado ("45 min", "3 h", "2 h 15 min").
+ * @param seconds Segundos.
+ * @returns Texto curto.
+ */
+export function formatStudyTime(seconds: number): string {
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours} h ${rest} min` : `${hours} h`;
+}
+
+/**
  * Plural simples em português.
  * @param count Quantidade.
  * @param singular Palavra no singular.

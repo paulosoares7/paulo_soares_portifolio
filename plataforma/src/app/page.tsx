@@ -18,14 +18,18 @@ import { Badge } from "@portfolio/ui/Badge";
 import { ButtonLink } from "@portfolio/ui/Button";
 import { Container, SectionTitle } from "@portfolio/ui/Container";
 import { CourseCard } from "@/components/catalog/CourseCard";
-import { WelcomeBack } from "@/components/home/WelcomeBack";
+import { FreeDashboard } from "@/components/dashboard/FreeDashboard";
+import { SubscriberDashboard } from "@/components/dashboard/SubscriberDashboard";
 import { FINAL_CTA, HERO, INCLUDED, STEPS } from "@/content/home";
 import { getActivePlan, getCatalog } from "@/lib/catalog";
 import { formatMoney, plural } from "@/lib/format";
+import { getViewer, type Viewer } from "@/lib/access";
 import { getFreeLessons, getProfessorSummary, profilePhotoUrl } from "@/lib/home";
+import { getStudentArea, getStudentDashboard } from "@/lib/student-area";
 
-// Conteúdo vem do painel; revalida a cada 5 min sem precisar de novo deploy.
-export const revalidate = 300;
+// A página depende de quem está logado (painel do aluno ou apresentação),
+// então é montada a cada visita.
+export const dynamic = "force-dynamic";
 
 // Ícone de cada grupo do catálogo (slug de categories); outro slug usa o livro.
 const GROUP_ICONS: Record<string, LucideIcon> = {
@@ -43,13 +47,38 @@ const INCLUDED_ICONS: Record<(typeof INCLUDED)[number]["icon"], LucideIcon> = {
 };
 
 /**
- * Página inicial da plataforma. Para o aluno logado, a abertura vira "Olá,
- * Nome" com o continuar de onde parou (WelcomeBack). Para o visitante:
- * apresentação (abertura, como funciona, grupos,
+ * Painel do aluno logado (a página inicial dele): o de quem assina (ou tem
+ * cortesia) é completo; o de quem não assina é simples, com a chamada para
+ * assinar.
+ * @param viewer Aluno logado.
+ */
+async function StudentHome({ viewer }: { viewer: Viewer }) {
+  const area = await getStudentArea(viewer.id);
+  const subscribedIds = area.subscription?.courses.map((c) => c.course.id) ?? [];
+  const dashboard = await getStudentDashboard(viewer.id, subscribedIds);
+  if (area.subscription)
+    return <SubscriberDashboard viewer={viewer} area={area} dashboard={dashboard} />;
+  const [plan, freeLessons] = await Promise.all([getActivePlan(), getFreeLessons()]);
+  return (
+    <FreeDashboard
+      viewer={viewer}
+      area={area}
+      dashboard={dashboard}
+      plan={plan}
+      freeLessons={freeLessons}
+    />
+  );
+}
+
+/**
+ * Página inicial da plataforma. Aluno logado: o painel dele (StudentHome).
+ * Visitante: apresentação (abertura, como funciona, grupos,
  * aulas grátis, o que está incluído, plano, resumo do professor e chamada
  * final) e, no fim, as disciplinas publicadas.
  */
 export default async function HomePage() {
+  const viewer = await getViewer();
+  if (viewer) return <StudentHome viewer={viewer} />;
   const [categories, plan, freeLessons, { profile }] = await Promise.all([
     getCatalog(),
     getActivePlan(),
@@ -67,25 +96,23 @@ export default async function HomePage() {
           aria-hidden
           className="bg-accent/10 pointer-events-none absolute -top-40 right-0 h-[520px] w-[520px] rounded-full blur-3xl"
         />
-        <WelcomeBack>
-          <Container className="relative py-16 md:py-24">
-            <p className="text-accent text-sm font-semibold tracking-wide uppercase">
-              {HERO.eyebrow}
-            </p>
-            <h1 className="mt-3 max-w-3xl text-4xl leading-tight font-bold sm:text-5xl">
-              {HERO.title}
-            </h1>
-            <p className="text-muted mt-5 max-w-2xl text-lg leading-relaxed">{HERO.text}</p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <ButtonLink href={freeLessons[0]?.href ?? "/aulas"}>
-                <PlayCircle className="size-4" aria-hidden /> Ver aulas grátis
-              </ButtonLink>
-              <ButtonLink href="/assinar" variant="outline">
-                Assinar {plan ? `por ${formatMoney(plan.priceCents)}/mês` : null}
-              </ButtonLink>
-            </div>
-          </Container>
-        </WelcomeBack>
+        <Container className="relative py-16 md:py-24">
+          <p className="text-accent text-sm font-semibold tracking-wide uppercase">
+            {HERO.eyebrow}
+          </p>
+          <h1 className="mt-3 max-w-3xl text-4xl leading-tight font-bold sm:text-5xl">
+            {HERO.title}
+          </h1>
+          <p className="text-muted mt-5 max-w-2xl text-lg leading-relaxed">{HERO.text}</p>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <ButtonLink href={freeLessons[0]?.href ?? "/aulas"}>
+              <PlayCircle className="size-4" aria-hidden /> Ver aulas grátis
+            </ButtonLink>
+            <ButtonLink href="/assinar" variant="outline">
+              Assinar {plan ? `por ${formatMoney(plan.priceCents)}/mês` : null}
+            </ButtonLink>
+          </div>
+        </Container>
       </section>
 
       {/* 2. Como funciona */}

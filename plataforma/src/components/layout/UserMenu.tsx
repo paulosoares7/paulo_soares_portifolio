@@ -8,9 +8,9 @@ import { authClient } from "@/lib/auth-client";
 import { loginReturnPath } from "@/lib/safe-next";
 
 const ITEMS = [
-  { href: "/minha-area", label: "Painel", icon: LayoutDashboard },
-  { href: "/minha-area#disciplinas", label: "Minhas disciplinas", icon: BookOpen },
-  { href: "/minha-area#assinatura", label: "Assinatura", icon: CreditCard },
+  { href: "/", label: "Painel", icon: LayoutDashboard },
+  { href: "/#disciplinas", label: "Minhas disciplinas", icon: BookOpen },
+  { href: "/#assinatura", label: "Assinatura", icon: CreditCard },
 ];
 
 /**
@@ -72,7 +72,7 @@ export function UserMenu() {
   }
 
   if (!data) {
-    // Da aula ou atividade, volta para ela; do resto, vai para o painel.
+    // Da aula ou atividade, volta para ela; do resto, vai para o painel (o Início).
     const back = loginReturnPath(pathname);
     const next = back ? `?next=${encodeURIComponent(back)}` : "";
     return (

@@ -32,9 +32,9 @@ adaptados ao tema escuro. As imagens estão em [`inspiracoes/`](inspiracoes/).
 | Assinar | `/assinar` | Preço, o que inclui, formulário (nome, e-mail, CPF) e forma de pagamento |
 | Sucesso | `/assinar/sucesso` | Código exibido uma vez + escolha das até 3 disciplinas |
 | Entrar | `/entrar` | Campo único com máscara `XXXX-XXXX-XXXX-XXXX` e link "perdi meu código" |
-| Painel do aluno | `/minha-area` | Tela de início depois do login: avisos da assinatura, números de desempenho, dias de estudo na semana, continuar de onde parou, últimas aulas, disciplinas com progresso, atividades, assinatura, conquistas e conta. Aluno novo: boas-vindas com aulas grátis. Sem assinatura: convite para assinar |
+| Painel do aluno | `/` (logado) | O Início de quem está logado. Assinante/cortesia: painel completo (avisos, continuar, sequência e semana, 4 números, disciplinas com próxima aula, atividades para fazer e recentes, calendário de 4 semanas, assinatura, conquistas, conta). Sem assinatura: painel simples com a chamada para assinar. `/minha-area` redireciona para `/` |
 | Convite para assinar | aula | Modal ao abrir a última aula grátis da disciplina (uma vez por visita) e cartão fixo abaixo do vídeo; o cadeado mostra o preço do plano |
-| Celular | todas | Menu inferior fixo: Início, Aulas, Professor, Painel |
+| Celular | todas | Menu inferior fixo: Início, Aulas, Professor, Assinar (entrar e a conta ficam no avatar do topo) |
 
 ## Mapa de páginas — admin
 

@@ -58,6 +58,6 @@ export async function markLessonCompleted(
   const found = await openableLesson(lessonId);
   if (!found) return { ok: false, done: !done };
   await setLessonCompleted(found.studentId, found.lesson.id, Boolean(done));
-  revalidatePath("/minha-area");
+  revalidatePath("/");
   return { ok: true, done: Boolean(done) };
 }

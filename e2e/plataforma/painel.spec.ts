@@ -1,16 +1,32 @@
-// Etapa 4b: painel do aluno depois do login, saudação na página inicial e o
-// convite para assinar na última aula grátis da disciplina. Física I (seed):
-// as aulas grátis são "o-que-e-movimento" e "velocidade-constante" (a última).
+// Etapa 4b: o Início é o painel do aluno logado (completo para quem assina,
+// simples com a chamada para assinar para quem não assina) e o convite para
+// assinar na última aula grátis. Física I (seed): as aulas grátis são
+// "o-que-e-movimento" e "velocidade-constante" (a última).
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-const student = JSON.parse(
+const accounts = JSON.parse(
   readFileSync(path.resolve(__dirname, "../.auth/student.json"), "utf8"),
-) as { email: string; password: string };
+) as { email: string; password: string; freeEmail: string; freePassword: string };
 
 const FIRST_FREE = "/disciplina/fisica-1/cinematica/o-que-e-movimento";
 const LAST_FREE = "/disciplina/fisica-1/cinematica/velocidade-constante";
+
+/**
+ * Entra pelo botão "Entrar" do topo da página inicial.
+ * @param page Página do teste.
+ * @param email E-mail.
+ * @param password Senha.
+ */
+async function signInFromHome(page: Page, email: string, password: string): Promise<void> {
+  await page.goto("/");
+  await page.getByRole("banner").getByRole("link", { name: "Entrar" }).click();
+  await expect(page).toHaveURL(/\/entrar$/);
+  await page.getByRole("textbox", { name: "E-mail" }).fill(email);
+  await page.getByLabel("Senha").fill(password);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+}
 
 test("visitante recebe o convite ao abrir a última aula grátis", async ({ page }) => {
   // Primeira aula grátis: sem convite.
@@ -37,32 +53,57 @@ test("visitante recebe o convite ao abrir a última aula grátis", async ({ page
   await page.reload();
   await expect(page.getByText("Aulas com cadeado são para assinantes")).toBeVisible();
   await expect(page.getByRole("dialog", { name: /última aula grátis/ })).toBeHidden();
+
+  // Visitante vê a apresentação no Início.
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: /Como funciona/ })).toBeVisible();
 });
 
-test("login pelo topo leva ao painel e a página inicial cumprimenta", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("banner").getByRole("link", { name: "Entrar" }).click();
-  await expect(page).toHaveURL(/\/entrar$/);
-  await page.getByRole("textbox", { name: "E-mail" }).fill(student.email);
-  await page.getByLabel("Senha").fill(student.password);
-  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+test("assinante: o Início é o painel completo", async ({ page }) => {
+  await signInFromHome(page, accounts.email, accounts.password);
 
-  // Painel: a tela de início do aluno.
-  await expect(page).toHaveURL(/\/minha-area$/);
+  // Continua no Início, que agora é o painel (sem a apresentação).
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { level: 1, name: /Olá, Aluno!/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Como funciona/ })).toHaveCount(0);
+  await expect(page.getByText("cortesia").first()).toBeVisible();
+
   const stats = page.getByRole("list", { name: "Seu desempenho" });
   await expect(stats.getByText("aula(s) concluída(s)")).toBeVisible();
-  await expect(stats.getByText("dias de estudo na semana")).toBeVisible();
-  await expect(page.getByRole("list", { name: "Dias de estudo nos últimos 7 dias" })).toBeVisible();
+  await expect(stats.getByText("de aula concluída")).toBeVisible();
+  await expect(stats.getByText("atividade(s) feita(s)")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Sua sequência" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Estudo nos últimos 28 dias" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Atividades para fazer" })).toBeVisible();
+  const courses = page.getByRole("region", { name: "Minhas disciplinas" });
+  await expect(courses.getByRole("link", { name: /Próxima:/ })).toBeVisible();
 
-  // Página inicial para quem está logado.
-  await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: /Olá, Aluno!/ })).toBeVisible();
-  await page.getByRole("link", { name: "Ir para o meu painel" }).click();
-  await expect(page).toHaveURL(/\/minha-area$/);
+  // O endereço antigo leva ao Início.
+  await page.goto("/minha-area");
+  await expect(page).toHaveURL(/\/$/);
 
-  // Assinante de Física I (cortesia do teste): sem convite na última aula grátis.
+  // Assinante de Física I: sem convite na última aula grátis.
   await page.goto(LAST_FREE);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByText("Aulas com cadeado são para assinantes")).toHaveCount(0);
+});
+
+test("sem assinatura: painel simples com a chamada para assinar", async ({ page }) => {
+  await signInFromHome(page, accounts.freeEmail, accounts.freePassword);
+
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("heading", { level: 1, name: /Olá, Gratuito!/ })).toBeVisible();
+  await expect(page.getByText("versão gratuita")).toBeVisible();
+  const call = page.getByRole("region", { name: /Libere todas as aulas/ });
+  await expect(call.getByText(/R\$/).first()).toBeVisible();
+  await expect(call.getByRole("link", { name: "Quero assinar" })).toBeVisible();
+  await expect(page.getByText("Boas-vindas!")).toBeVisible();
+  await expect(page.getByRole("list", { name: "Aulas grátis" })).toBeVisible();
+  // O painel completo é só do assinante.
+  await expect(page.getByRole("heading", { name: "Atividades para fazer" })).toHaveCount(0);
+
+  // Sem assinatura, recebe o convite na última aula grátis.
+  await page.goto(LAST_FREE);
+  await expect(page.getByRole("dialog", { name: /última aula grátis/ })).toBeVisible();
 });

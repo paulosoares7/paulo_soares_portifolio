@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, House, UserRound, UserSquare } from "lucide-react";
+import { BookOpen, CreditCard, House, UserSquare } from "lucide-react";
 
 const TOP_LINKS = [
   { href: "/", label: "Início" },
@@ -11,12 +11,13 @@ const TOP_LINKS = [
   { href: "/assinar", label: "Assinar" },
 ];
 
-// Menu inferior do celular: Início, Aulas, Professor e Painel.
+// Menu inferior do celular: Início (o painel de quem está logado), Aulas,
+// Professor e Assinar. Entrar e a conta ficam no avatar do topo.
 const BOTTOM_LINKS = [
   { href: "/", label: "Início", icon: House },
   { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/sobre-o-professor", label: "Professor", icon: UserSquare },
-  { href: "/minha-area", label: "Painel", icon: UserRound },
+  { href: "/assinar", label: "Assinar", icon: CreditCard },
 ];
 
 /**
@@ -33,8 +34,6 @@ function isActive(pathname: string, href: string): boolean {
       pathname.startsWith("/disciplina") ||
       pathname.startsWith("/atividades")
     );
-  if (href === "/minha-area")
-    return ["/minha-area", "/entrar", "/cadastrar"].some((p) => pathname.startsWith(p));
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

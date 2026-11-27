@@ -1,5 +1,5 @@
 // Etapa 4: login (Google em destaque, visitante, validação ao vivo), menu do
-// avatar, progresso da aula e a Minha área. O aluno de teste é recriado no
+// avatar, progresso da aula e o painel (o Início de quem está logado). O aluno de teste é recriado no
 // global-setup com senha aleatória (e2e/.auth/student.json).
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -56,7 +56,7 @@ test("formulário só libera com os campos válidos e mostra o erro no campo", a
   await expect(submit).toBeEnabled();
 });
 
-test("menu do avatar, progresso da aula e Minha área", async ({ page }) => {
+test("menu do avatar, progresso da aula e painel", async ({ page }) => {
   await signIn(page);
 
   // Menu: abre, fecha clicando fora e com Esc.
@@ -73,11 +73,11 @@ test("menu do avatar, progresso da aula e Minha área", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(menu).toBeHidden();
 
-  // Minha área sem histórico.
+  // Painel sem histórico.
   await avatar.click();
   await menu.getByRole("menuitem", { name: "Minhas disciplinas" }).click();
-  await expect(page).toHaveURL(/\/minha-area#disciplinas/);
-  await expect(page.getByText("Você ainda não começou nenhuma aula.")).toBeVisible();
+  await expect(page).toHaveURL(/\/#disciplinas/);
+  await expect(page.getByRole("heading", { name: "Continuar de onde parou" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Conquistas" })).toBeVisible();
   await expect(page.getByText("Sem cobrança (cortesia)")).toBeVisible();
 
@@ -96,8 +96,8 @@ test("menu do avatar, progresso da aula e Minha área", async ({ page }) => {
   // As ações do servidor rodam em fila: liberado = visita e conclusão gravadas.
   await expect(page.getByRole("button", { name: "Aula concluída" })).toBeEnabled();
 
-  // A Minha área mostra a aula vista e o progresso.
-  await page.goto("/minha-area");
+  // O painel mostra a aula vista e o progresso.
+  await page.goto("/");
   await expect(page.getByRole("heading", { name: "Assistidas por último" })).toBeVisible();
   await expect(page.getByRole("link", { name: new RegExp(lessonTitle) }).first()).toBeVisible();
   const progress = page.getByRole("progressbar", { name: "Progresso em Física I" });
@@ -109,7 +109,7 @@ test("menu do avatar, progresso da aula e Minha área", async ({ page }) => {
   await page.getByRole("textbox").first().fill("25");
   await page.getByRole("button", { name: "Enviar respostas" }).click();
   await expect(page.getByRole("button", { name: "Refazer" })).toBeVisible();
-  await page.goto("/minha-area");
+  await page.goto("/");
   const recent = page.getByRole("region", { name: "Atividades recentes" });
   await expect(recent.getByText("Atividade 1: MRU (grátis)")).toBeVisible();
   await expect(recent.getByText("100%", { exact: true })).toBeVisible();
