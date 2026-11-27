@@ -29,6 +29,8 @@ Médio, Ensino Superior e Concursos.
 | [05 — Fluxos](docs/05-fluxos.md) | Login, assinatura, troca de disciplina, reprodução |
 | [06 — Interface](docs/06-interface.md) | Mapa de páginas, inspirações e tokens visuais |
 | [07 — Roadmap](docs/07-roadmap.md) | Fases, status real e critérios para avançar |
+| [Guia de publicação](docs/guia-publicacao.md) | Banco no TiDB Cloud e os três apps na Vercel, passo a passo |
+| [Guia do login com Google](docs/guia-login-google.md) | Credenciais do Google Cloud para o "Entrar com Google" |
 | [Pedidos](docs/prompts/README.md) | Pedidos prontos para o Claude Code (auditoria, modo offline) |
 
 As regras de código que o Claude Code segue estão em [`CLAUDE.md`](CLAUDE.md).

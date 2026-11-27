@@ -14,12 +14,18 @@ export * from "./generated/prisma/client";
  */
 function createAdapter(databaseUrl: string): PrismaMariaDb {
   const url = new URL(databaseUrl);
+  // Banco na nuvem (TiDB Cloud e outros) exige conexão criptografada: a URL
+  // termina com ?sslaccept=strict, o mesmo parâmetro que o Prisma CLI usa nas
+  // migrações. Assim uma única DATABASE_URL serve para os dois. O certificado
+  // do servidor é conferido (rejectUnauthorized).
+  const tls = url.searchParams.get("sslaccept") === "strict";
   return new PrismaMariaDb({
     host: url.hostname,
     port: url.port ? Number(url.port) : 3306,
     user: decodeURIComponent(url.username),
     password: decodeURIComponent(url.password),
     database: url.pathname.replace(/^\//, ""),
+    ...(tls ? { ssl: { rejectUnauthorized: true, minVersion: "TLSv1.2" } } : {}),
     // O MySQL 8 usa caching_sha2_password; sem TLS (Docker local) o driver
     // precisa buscar a chave pública do servidor para autenticar.
     allowPublicKeyRetrieval: true,
