@@ -17,3 +17,9 @@ a política de privacidade.
 
 Os vídeos reais podem entrar a qualquer momento depois da fase 2, sem mudar
 código.
+
+## Melhorias futuras
+
+Depois do lançamento:
+
+- Modo offline dos PDFs enviados (estilo Spotify) — docs/prompts/futuro-pdf-offline.md
