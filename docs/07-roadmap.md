@@ -24,7 +24,10 @@ código.
 
 | Item | Situação | Quando |
 | --- | --- | --- |
-| Seletor de tema (claro, escuro e sistema) no admin, portfolio e plataforma | Adiado pelo professor. A base está pronta: tokens de cor centralizados em `packages/ui/src/tokens.css` (commit `ae75e55`). Regras em `docs/prompts/auditoria-e-continuacao.md` (seção "REGRAS DO TEMA") | Semana de 30/11/2026 |
+| Bloco 4a — Seletor de tema (claro, escuro e sistema) no admin, portfolio e plataforma | Adiado pelo professor. A base está pronta: tokens de cor centralizados em `packages/ui/src/tokens.css` (commit `ae75e55`). Regras em `docs/prompts/auditoria-e-continuacao.md` (seção "REGRAS DO TEMA"). Cerca de 1h30 a 2h | Semana de 30/11/2026 ou depois |
+| Bloco 4b — Configurações da conta do aluno | Página `/minha-area/conta` e item "Configurações da conta" no menu do avatar: nome, nome no fórum, foto (Google, link; arquivo quando o R2 estiver ligado), troca de senha (ou criar senha), troca de e-mail com confirmação no e-mail novo, aparelhos conectados (encerrar um ou todos). Cerca de 2h15 | Junto com o 4a |
+| Bloco 4c — Excluir conta (só pelo próprio aluno) | O sistema nunca exclui ninguém sozinho. Sem pagamentos: apaga; com pagamentos: anonimiza ("Aluno removido", RN14); posts do fórum ficam como "Aluno removido"; assinatura ativa é cancelada antes; e-mail de aviso. **A confirmar:** confirmação digitando o e-mail (e a senha, se tiver); sem volta atrás ou 30 dias de espera. Cerca de 45 min | Junto com o 4a |
+| Bloco 4d — Carência de 10 dias e versão gratuita | Quem não paga não perde a conta: até 10 dias depois do vencimento, acesso completo com aviso "pagamento atrasado: faltam X dias"; depois, a conta fica limitada ao conteúdo grátis (login, progresso e histórico continuam) até pagar de novo. Muda a visão `v_student_course_access` (migração), avisos na Minha área e estado no admin; atualizar RN04 e RN05. **A confirmar:** 10 dias fixos ou campo no plano; guardar as disciplinas escolhidas para quando voltar a pagar (sugestão: sim). Cerca de 2h | Junto com o 4a |
 
 ## Pendências por credencial
 
