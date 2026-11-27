@@ -7,6 +7,7 @@ import { PublicationCard } from "@/components/publications/PublicationCard";
 import { Container, SectionTitle } from "@portfolio/ui/Container";
 import { getHomeData } from "@/lib/portfolio";
 import { getSiteIdentity, withLessonsLink } from "@/lib/site";
+import { resolveProfileMedia } from "@/lib/profile-media";
 
 // Conteúdo vem do painel; revalida a cada 5 min sem precisar de novo deploy.
 export const revalidate = 300;
@@ -18,14 +19,16 @@ export default async function HomePage() {
     getSiteIdentity(),
   ]);
 
+  const media = resolveProfileMedia(profile);
+
   return (
     <>
       <Hero
         fullName={profile?.fullName ?? identity.displayName}
         headline={profile?.headline ?? ""}
         shortBio={profile?.shortBio ?? ""}
-        photoUrl={profile?.photoFile?.publicUrl ?? null}
-        cvUrl={profile?.cvFile?.publicUrl ?? null}
+        photoUrl={media.photoUrl}
+        cvUrl={media.cvUrl}
         lattesUrl={
           profile?.lattesUrl ||
           identity.socialLinks.find((l) => l.network === "lattes")?.url ||

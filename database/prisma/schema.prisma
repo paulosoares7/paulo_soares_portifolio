@@ -333,6 +333,10 @@ model Profile {
   photoFileId     Int?      @map("photo_file_id") @db.UnsignedInt
   /// PDF do botão Baixar currículo.
   cvFileId        Int?      @map("cv_file_id") @db.UnsignedInt
+  /// Link externo da foto (Drive, site...); vale quando não há arquivo enviado.
+  photoUrl        String?   @map("photo_url") @db.VarChar(500)
+  /// Link externo do currículo em PDF; vale quando não há arquivo enviado.
+  cvUrl           String?   @map("cv_url") @db.VarChar(500)
   publicEmail     String?   @map("public_email") @db.VarChar(190)
   city            String?   @db.VarChar(100)
   /// Número do currículo Lattes.

@@ -21,7 +21,7 @@ import { CourseCard } from "@/components/catalog/CourseCard";
 import { FINAL_CTA, HERO, INCLUDED, STEPS } from "@/content/home";
 import { getActivePlan, getCatalog } from "@/lib/catalog";
 import { formatMoney, plural } from "@/lib/format";
-import { getFreeLessons, getProfessorSummary } from "@/lib/home";
+import { getFreeLessons, getProfessorSummary, profilePhotoUrl } from "@/lib/home";
 
 // Conteúdo vem do painel; revalida a cada 5 min sem precisar de novo deploy.
 export const revalidate = 300;
@@ -223,10 +223,10 @@ export default async function HomePage() {
       {profile ? (
         <Container className="mt-20">
           <section className="rounded-card border-border bg-surface flex flex-col items-start gap-6 border p-6 sm:flex-row sm:items-center sm:p-8">
-            {profile.photoFile?.publicUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- URL pública do storage
+            {profilePhotoUrl(profile) ? (
+              // eslint-disable-next-line @next/next/no-img-element -- URL do storage ou link externo
               <img
-                src={profile.photoFile.publicUrl}
+                src={profilePhotoUrl(profile) ?? undefined}
                 alt={`Foto de ${profile.fullName}`}
                 className="border-accent/40 size-24 shrink-0 rounded-full border object-cover"
               />

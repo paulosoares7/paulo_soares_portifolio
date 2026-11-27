@@ -4,6 +4,7 @@ import { cache } from "react";
 import { prisma } from "@portfolio/database";
 import { checkAccess, getViewerStudentId } from "@/lib/access";
 import { toPlayerSource, type PlayerSource } from "@/lib/video";
+import { materialLinks } from "@/lib/material-links";
 
 /**
  * Aula pelo endereço /disciplina/[curso]/[módulo]/[aula].
@@ -134,7 +135,6 @@ export const getLessonPage = cache(
           { isPreview: m.isPreview, courseId: module.course.id },
           studentId,
         );
-        const isPdf = m.fileId !== null || /\.pdf($|\?)/i.test(m.externalUrl ?? "");
         return {
           id: m.id,
           type: m.type,
@@ -142,8 +142,7 @@ export const getLessonPage = cache(
           description: m.description,
           where: "Esta aula",
           access: itemAccess,
-          isPdf,
-          openUrl: itemAccess !== "locked" && !isPdf ? m.externalUrl : null,
+          ...materialLinks(m, itemAccess),
         };
       }),
     );

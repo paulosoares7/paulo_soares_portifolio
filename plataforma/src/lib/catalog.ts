@@ -4,6 +4,7 @@
 import { cache } from "react";
 import { prisma } from "@portfolio/database";
 import { checkAccess, getViewerStudentId, type Access } from "@/lib/access";
+import { materialLinks } from "@/lib/material-links";
 
 /** Filtro de aula visível no site: publicada, em módulo e disciplina publicados. */
 const publishedLesson = {
@@ -265,7 +266,6 @@ export const getCoursePage = cache(async (slug: string) => {
     materials.map(async (m) => {
       const itemAccess = await access(m.isPreview);
       // Link externo só sai do servidor para quem tem acesso; PDF nunca vira link direto (RN12).
-      const isPdf = m.fileId !== null || /\.pdf($|\?)/i.test(m.externalUrl ?? "");
       return {
         id: m.id,
         type: m.type,
@@ -277,8 +277,7 @@ export const getCoursePage = cache(async (slug: string) => {
             ? `Módulo: ${m.module.title}`
             : "Disciplina",
         access: itemAccess,
-        isPdf,
-        openUrl: itemAccess !== "locked" && !isPdf ? m.externalUrl : null,
+        ...materialLinks(m, itemAccess),
       };
     }),
   );

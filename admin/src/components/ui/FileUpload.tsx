@@ -26,9 +26,19 @@ export function FileUpload({ kind, storageReady, label, onUploaded }: FileUpload
 
   if (!storageReady) {
     return (
-      <p className="rounded-btn border-warning/50 text-warning border border-dashed px-3 py-2 text-xs">
-        Envio de arquivos desativado: falta configurar o storage (STORAGE_* no .env.local).
-      </p>
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          disabled
+          className="rounded-btn border-border text-muted inline-flex w-fit cursor-not-allowed items-center gap-2 border px-3 py-2 text-sm opacity-60"
+        >
+          <Upload className="size-4" aria-hidden />
+          {label}
+        </button>
+        <p className="rounded-btn border-warning/50 text-warning border border-dashed px-3 py-2 text-xs">
+          Configure o armazenamento para enviar arquivos (STORAGE_* no .env.local do painel).
+        </p>
+      </div>
     );
   }
 

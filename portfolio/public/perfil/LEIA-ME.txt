@@ -1,0 +1,7 @@
+Arquivos de reserva do perfil (usados só quando o painel não tem arquivo
+enviado nem link externo):
+
+  foto.jpg (ou foto.jpeg, foto.png, foto.webp)  -> foto da página inicial
+  curriculo.pdf                                 -> botão "Ver currículo"
+
+Ordem de prioridade: arquivo enviado no painel -> link externo -> esta pasta.

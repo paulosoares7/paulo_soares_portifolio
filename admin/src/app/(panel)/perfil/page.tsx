@@ -77,6 +77,8 @@ export default async function ProfilePage() {
               profile?.photoFile ? { name: profile.photoFile.originalName, url: photoUrl } : null
             }
             cv={profile?.cvFile ? { name: profile.cvFile.originalName, url: null } : null}
+            photoLink={profile?.photoUrl ?? ""}
+            cvLink={profile?.cvUrl ?? ""}
           />
         </Card>
 

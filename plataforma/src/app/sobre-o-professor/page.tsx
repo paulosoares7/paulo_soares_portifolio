@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import { buttonClasses, ButtonLink } from "@portfolio/ui/Button";
 import { Container, PageTitle } from "@portfolio/ui/Container";
 import { SocialIcon, SocialLinks } from "@portfolio/ui/SocialIcon";
-import { getProfessorSummary } from "@/lib/home";
+import { getProfessorSummary, profilePhotoUrl } from "@/lib/home";
 import { portfolioUrl } from "@/lib/links";
 import { getSiteIdentity } from "@/lib/site";
 
@@ -31,10 +31,10 @@ export default async function ProfessorPage() {
     <Container>
       <PageTitle title="Sobre o" accent="professor" />
       <section className="rounded-card border-border bg-surface grid gap-8 border p-6 sm:p-10 md:grid-cols-[auto_1fr]">
-        {profile?.photoFile?.publicUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- URL pública do storage
+        {profilePhotoUrl(profile) ? (
+          // eslint-disable-next-line @next/next/no-img-element -- URL do storage ou link externo
           <img
-            src={profile.photoFile.publicUrl}
+            src={profilePhotoUrl(profile) ?? undefined}
             alt={`Foto de ${name}`}
             className="border-accent/40 size-40 rounded-full border object-cover"
           />

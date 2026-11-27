@@ -1,5 +1,6 @@
 // Peças de schema reutilizadas pelos validadores (cliente e servidor).
 import { z } from "zod";
+import { isHttpsUrl, normalizeExternalUrl } from "@portfolio/database/external-link";
 import { parseMoneyToCents } from "@/lib/format";
 
 /** Checkbox HTML: "on" quando marcado, ausente quando não. */
@@ -39,6 +40,18 @@ export const optionalUrl = (max: number) =>
   optionalText(max).refine((value) => value === null || /^https?:\/\/\S+$/i.test(value), {
     message: "Informe uma URL começando com http:// ou https://.",
   });
+
+/**
+ * Link externo opcional (Drive, OneDrive, Dropbox ou site): só https. Link do
+ * Google Drive é salvo no formato de visualização (…/file/d/ID/view).
+ * @param max Tamanho máximo.
+ */
+export const optionalHttpsLink = (max: number) =>
+  optionalText(max)
+    .refine((value) => value === null || isHttpsUrl(value), {
+      message: "Informe um endereço completo começando com https://.",
+    })
+    .transform((value) => (value === null ? null : normalizeExternalUrl(value)));
 
 /** E-mail obrigatório, em minúsculas. */
 export const email = z

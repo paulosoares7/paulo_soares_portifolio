@@ -3,9 +3,9 @@ import { enumValues, MATERIAL_TYPES } from "@/lib/labels";
 import {
   checkbox,
   id,
+  optionalHttpsLink,
   optionalId,
   optionalText,
-  optionalUrl,
   requiredText,
 } from "@/validators/common";
 
@@ -80,7 +80,7 @@ export const materialSchema = z
     title: requiredText(200),
     description: optionalText(400),
     fileId: optionalId,
-    externalUrl: optionalUrl(500),
+    externalUrl: optionalHttpsLink(500),
     isPreview: checkbox,
   })
   .superRefine((value, ctx) => {
@@ -94,7 +94,13 @@ export const materialSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["externalUrl"],
-        message: "Envie um PDF ou informe um link.",
+        message: "Envie um arquivo ou cole um link externo.",
       });
     }
   });
+
+/** Foto ou currículo do perfil por link externo (vazio = remove o link). */
+export const profileLinkSchema = z.object({
+  field: z.enum(["photo", "cv"]),
+  url: optionalHttpsLink(500),
+});

@@ -1,9 +1,10 @@
-import { ExternalLink, FileText, Lock } from "lucide-react";
+import { ExternalLink, FileText, Link2, Lock } from "lucide-react";
+import { MaterialEmbed } from "@/components/course/MaterialEmbed";
 import { Badge } from "@portfolio/ui/Badge";
 import type { Access } from "@/lib/access";
 import { MATERIAL_TYPES } from "@/lib/labels";
 
-/** Material como a página recebe (link só vem quando há acesso e não é PDF). */
+/** Material como a página recebe (endereços só vêm quando há acesso). */
 export type MaterialItem = {
   id: number;
   type: keyof typeof MATERIAL_TYPES;
@@ -11,13 +12,18 @@ export type MaterialItem = {
   description: string | null;
   where: string;
   access: Access;
-  isPdf: boolean;
+  /** Arquivo enviado (visualizador protegido) ou link externo. */
+  kind: "file" | "link";
   openUrl: string | null;
+  /** Google Drive/Docs: abre embutido na página. */
+  embedUrl: string | null;
 };
 
 /**
- * Lista de materiais. PDF nunca vira link de download (RN12): ele será aberto
- * no visualizador com marca d'água (fase 4). Pagos aparecem com cadeado.
+ * Lista de materiais. Arquivo enviado nunca vira link de download (RN12): ele
+ * será aberto no visualizador com marca d'água (fase 4). Material por link
+ * abre em nova aba e, se for do Google Drive/Docs, também dentro da página.
+ * Pagos aparecem com cadeado e sem endereço.
  */
 export function MaterialList({ items }: { items: MaterialItem[] }) {
   if (items.length === 0) {
@@ -35,7 +41,13 @@ export function MaterialList({ items }: { items: MaterialItem[] }) {
             aria-hidden
             className={`rounded-btn flex size-10 shrink-0 items-center justify-center ${m.access === "locked" ? "bg-border/40 text-muted" : "bg-accent/15 text-accent"}`}
           >
-            {m.access === "locked" ? <Lock className="size-5" /> : <FileText className="size-5" />}
+            {m.access === "locked" ? (
+              <Lock className="size-5" />
+            ) : m.kind === "link" ? (
+              <Link2 className="size-5" />
+            ) : (
+              <FileText className="size-5" />
+            )}
           </span>
           <div className="min-w-0 flex-1">
             <p className="font-medium">{m.title}</p>
@@ -48,6 +60,8 @@ export function MaterialList({ items }: { items: MaterialItem[] }) {
             <span className="text-muted inline-flex items-center gap-1 text-xs">
               <Lock className="size-3.5" aria-hidden /> Assinantes
             </span>
+          ) : m.openUrl && m.embedUrl ? (
+            <MaterialEmbed title={m.title} embedUrl={m.embedUrl} openUrl={m.openUrl} />
           ) : m.openUrl ? (
             <a
               href={m.openUrl}

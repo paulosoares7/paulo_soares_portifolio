@@ -1,6 +1,7 @@
 // Dados da página inicial e da página "Sobre o professor".
 import { cache } from "react";
 import { prisma } from "@portfolio/database";
+import { imageUrl } from "@portfolio/database/external-link";
 
 /** Aula grátis em destaque na página inicial. */
 export type FreeLessonItem = {
@@ -61,6 +62,7 @@ export const getProfessorSummary = cache(async () => {
         headline: true,
         shortBio: true,
         lattesUrl: true,
+        photoUrl: true,
         photoFile: { select: { publicUrl: true } },
       },
     }),
@@ -68,3 +70,17 @@ export const getProfessorSummary = cache(async () => {
   ]);
   return { profile, highlights };
 });
+
+/**
+ * Foto do professor: arquivo enviado no painel ou, sem ele, o link externo
+ * (Drive vira a miniatura grande, que o navegador exibe como imagem).
+ * @param profile Perfil com photoFile e photoUrl.
+ * @returns Endereço da imagem ou null.
+ */
+export function profilePhotoUrl(
+  profile: { photoUrl: string | null; photoFile: { publicUrl: string | null } | null } | null,
+): string | null {
+  return (
+    profile?.photoFile?.publicUrl || (profile?.photoUrl ? imageUrl(profile.photoUrl) : null) || null
+  );
+}

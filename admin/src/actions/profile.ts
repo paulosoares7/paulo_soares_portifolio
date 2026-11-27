@@ -15,6 +15,7 @@ import {
   researchAreaSchema,
   socialLinkSchema,
 } from "@/validators/profile";
+import { profileLinkSchema } from "@/validators/media";
 
 // Página do painel de cada bloco (o perfil foi dividido em páginas no menu "Portfólio").
 const PATHS = {
@@ -69,6 +70,30 @@ export async function setProfileFile(
   }
   revalidatePath(PATHS.profile);
   return { ok: true };
+}
+
+/**
+ * Foto ou currículo por link externo (Drive, OneDrive, Dropbox ou site).
+ * Vazio remove o link. Na exibição, o arquivo enviado vem antes do link.
+ * @param field "photo" ou "cv".
+ * @param url Endereço https (ou vazio).
+ * @returns Resultado para o formulário.
+ */
+export async function setProfileLink(field: unknown, url: unknown): Promise<ActionState> {
+  await requireAdmin();
+  const parsed = profileLinkSchema.safeParse({ field, url: typeof url === "string" ? url : "" });
+  if (!parsed.success) {
+    return { ok: false, message: parsed.error.issues[0]?.message ?? "Link inválido." };
+  }
+  const data =
+    parsed.data.field === "photo" ? { photoUrl: parsed.data.url } : { cvUrl: parsed.data.url };
+  try {
+    await prisma.profile.update({ where: { id: 1 }, data });
+  } catch (error) {
+    return actionError(error, "Salve os dados do perfil antes de adicionar links.");
+  }
+  revalidatePath(PATHS.profile);
+  return { ok: true, message: parsed.data.url ? "Link salvo." : "Link removido." };
 }
 
 // ---------------------------------------------------------------------

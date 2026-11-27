@@ -160,6 +160,8 @@ Gerado a partir do banco criado pelo `001_schema.sql`.
 | `long_bio` | text | sim |  | Texto da página Sobre (Markdown) |
 | `photo_file_id` | int(10) unsigned | sim | índice FK → `media_files` |  |
 | `cv_file_id` | int(10) unsigned | sim | índice FK → `media_files` | PDF do botão Baixar currículo |
+| `photo_url` | varchar(500) | sim | — | Foto por link externo (Drive, OneDrive, Dropbox ou site, só https). Ordem na exibição: arquivo enviado → link → arquivo da pasta `public` do portfólio |
+| `cv_url` | varchar(500) | sim | — | Currículo por link externo (mesma ordem de prioridade da foto) |
 | `public_email` | varchar(190) | sim |  |  |
 | `city` | varchar(100) | sim |  |  |
 | `lattes_id` | varchar(20) | sim |  | Número do currículo Lattes |

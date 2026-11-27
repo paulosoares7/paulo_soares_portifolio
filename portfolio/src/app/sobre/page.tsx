@@ -7,6 +7,7 @@ import { Container, PageTitle, SectionTitle } from "@portfolio/ui/Container";
 import { Markdown } from "@portfolio/ui/Markdown";
 import { DEGREE_LEVELS } from "@/lib/labels";
 import { getAboutData } from "@/lib/portfolio";
+import { resolveProfileMedia } from "@/lib/profile-media";
 
 export const revalidate = 300;
 
@@ -61,6 +62,8 @@ export default async function AboutPage() {
     detail: e.description,
   }));
 
+  const { cvUrl } = resolveProfileMedia(profile);
+
   return (
     <Container>
       <PageTitle title="Sobre" accent="mim" description={profile?.headline} />
@@ -72,11 +75,11 @@ export default async function AboutPage() {
           ) : (
             <p className="text-muted leading-relaxed">{profile?.shortBio}</p>
           )}
-          {profile?.cvFile?.publicUrl || profile?.lattesUrl ? (
+          {cvUrl || profile?.lattesUrl ? (
             <div className="mt-6 flex flex-wrap gap-3">
-              {profile.cvFile?.publicUrl ? (
+              {cvUrl ? (
                 <a
-                  href={profile.cvFile.publicUrl}
+                  href={cvUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={buttonClasses("primary")}
@@ -84,7 +87,7 @@ export default async function AboutPage() {
                   <FileDown className="size-4" aria-hidden /> Baixar currículo
                 </a>
               ) : null}
-              {profile.lattesUrl ? (
+              {profile?.lattesUrl ? (
                 <a
                   href={profile.lattesUrl}
                   target="_blank"

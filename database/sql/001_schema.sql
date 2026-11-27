@@ -114,6 +114,8 @@ CREATE TABLE profile (
   long_bio         TEXT NULL COMMENT 'Texto da página Sobre (Markdown)',
   photo_file_id    INT UNSIGNED NULL,
   cv_file_id       INT UNSIGNED NULL COMMENT 'PDF do botão Baixar currículo',
+  photo_url        VARCHAR(500) NULL COMMENT 'Foto por link externo (vale sem arquivo enviado)',
+  cv_url           VARCHAR(500) NULL COMMENT 'Currículo por link externo (vale sem arquivo enviado)',
   public_email     VARCHAR(190) NULL,
   city             VARCHAR(100) NULL,
   lattes_id        VARCHAR(20)  NULL COMMENT 'Número do currículo Lattes',

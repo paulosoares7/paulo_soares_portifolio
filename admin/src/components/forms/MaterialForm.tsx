@@ -4,9 +4,11 @@ import { FileText } from "lucide-react";
 import { useState } from "react";
 import { saveMaterial } from "@/actions/materials";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/Field";
+import { ExternalLinkField } from "@/components/ui/ExternalLinkField";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { FormFooter } from "@/components/ui/FormFooter";
 import { useCloseModal } from "@/components/ui/ModalTrigger";
+import { SourceTabs, type SourceMode } from "@/components/ui/SourceTabs";
 import { MATERIAL_TYPES } from "@/lib/labels";
 import { useFormAction } from "@/lib/use-form-action";
 import type { CourseTree } from "@/types/catalog";
@@ -36,8 +38,9 @@ type MaterialFormProps = {
 };
 
 /**
- * Material da disciplina, de um módulo ou de uma aula: PDF enviado ao storage
- * (sempre privado, só visualizado no site com marca d'água) ou link.
+ * Material da disciplina, de um módulo ou de uma aula, por uma de duas
+ * formas: "Enviar arquivo" (PDF no storage, privado, visualizado no site com
+ * marca d'água) ou "Colar link externo" (Drive, OneDrive, Dropbox ou site).
  */
 export function MaterialForm({ item, tree, storageReady, defaultCourseId }: MaterialFormProps) {
   const close = useCloseModal();
@@ -52,6 +55,12 @@ export function MaterialForm({ item, tree, storageReady, defaultCourseId }: Mate
     item?.fileId ? { id: item.fileId, name: item.fileName ?? "arquivo.pdf" } : null,
   );
 
+  // Começa na forma que o material já usa; material novo começa no envio
+  // (ou no link, se o storage não estiver configurado).
+  const [mode, setMode] = useState<SourceMode>(
+    item?.fileId ? "file" : item?.externalUrl ? "link" : storageReady ? "file" : "link",
+  );
+
   const course = tree.find((c) => c.id === courseId);
   const lessons =
     ownerType === "lesson" ? (course?.modules.find((m) => m.id === moduleId)?.lessons ?? []) : [];
@@ -59,7 +68,8 @@ export function MaterialForm({ item, tree, storageReady, defaultCourseId }: Mate
   return (
     <form {...formProps} className="grid gap-4 md:grid-cols-2">
       <input type="hidden" name="id" value={item?.id ?? ""} />
-      <input type="hidden" name="fileId" value={file?.id ?? ""} />
+      {/* Só a forma escolhida vai no envio; a outra fica vazia. */}
+      <input type="hidden" name="fileId" value={mode === "file" ? (file?.id ?? "") : ""} />
 
       <Field label="Onde aparece" htmlFor="mat-owner" error={errors.ownerType}>
         <Select
@@ -158,43 +168,43 @@ export function MaterialForm({ item, tree, storageReady, defaultCourseId }: Mate
         />
       </Field>
 
-      <div className="flex flex-col gap-2 md:col-span-2">
-        <span className="text-sm font-medium">Arquivo PDF</span>
-        {file ? (
-          <p className="flex items-center gap-2 text-sm">
-            <FileText className="text-accent size-4" aria-hidden /> {file.name}
-            <button
-              type="button"
-              className="text-danger text-xs hover:underline"
-              onClick={() => setFile(null)}
-            >
-              remover
-            </button>
-          </p>
-        ) : null}
-        <FileUpload
-          kind="material"
-          storageReady={storageReady}
-          label={file ? "Trocar PDF" : "Enviar PDF"}
-          onUploaded={(mediaFileId, name) => setFile({ id: mediaFileId, name })}
-        />
+      <div className="flex flex-col gap-3 md:col-span-2">
+        <span className="text-sm font-medium">Conteúdo</span>
+        <SourceTabs mode={mode} onChange={setMode} label="Forma de adicionar o material" />
+        {mode === "file" ? (
+          <div className="flex flex-col gap-2">
+            {file ? (
+              <p className="flex items-center gap-2 text-sm">
+                <FileText className="text-accent size-4" aria-hidden /> {file.name}
+                <button
+                  type="button"
+                  className="text-danger text-xs hover:underline"
+                  onClick={() => setFile(null)}
+                >
+                  remover
+                </button>
+              </p>
+            ) : null}
+            <FileUpload
+              kind="material"
+              storageReady={storageReady}
+              label={file ? "Trocar PDF" : "Enviar PDF"}
+              onUploaded={(mediaFileId, name) => setFile({ id: mediaFileId, name })}
+            />
+            {errors.externalUrl ? (
+              <p className="text-danger text-xs">{errors.externalUrl[0]}</p>
+            ) : null}
+          </div>
+        ) : (
+          <ExternalLinkField
+            id="mat-url"
+            name="externalUrl"
+            defaultValue={item?.externalUrl}
+            error={errors.externalUrl}
+            protectionWarning
+          />
+        )}
       </div>
-      <Field
-        label="Ou link"
-        htmlFor="mat-url"
-        error={errors.externalUrl}
-        className="md:col-span-2"
-        hint="Usado só quando não há PDF enviado."
-      >
-        <Input
-          id="mat-url"
-          name="externalUrl"
-          type="url"
-          defaultValue={item?.externalUrl}
-          disabled={!!file}
-          invalid={!!errors.externalUrl}
-        />
-      </Field>
       <div className="md:col-span-2">
         <Checkbox
           name="isPreview"

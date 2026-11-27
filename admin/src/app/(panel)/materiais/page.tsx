@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { ExternalLink, Gift, Pencil, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, FileText, Gift, Link2, Pencil, Plus, Trash2 } from "lucide-react";
 import { prisma } from "@portfolio/database";
+import { LINK_SOURCE_LABELS, linkSource } from "@portfolio/database/external-link";
 import { deleteMaterial, toggleMaterialPreview } from "@/actions/materials";
 import { MaterialForm } from "@/components/forms/MaterialForm";
 import { ActionButton } from "@/components/ui/ActionButton";
@@ -140,11 +141,32 @@ export default async function MaterialsPage({
             {rows.map(({ m, course, owner, openUrl, lessonModuleId }) => (
               <tr key={m.id}>
                 <Td>
-                  <p className="font-medium">{m.title}</p>
-                  <p className="text-muted text-xs">
-                    {MATERIAL_TYPES[m.type]} ·{" "}
-                    {m.file ? `PDF ${m.file.originalName}` : "Link externo"}
-                  </p>
+                  <div className="flex items-start gap-3">
+                    {/* Ícone diz a forma: arquivo enviado (protegido) ou link externo. */}
+                    <span
+                      role="img"
+                      aria-label={m.file ? "Arquivo enviado" : "Link externo"}
+                      title={m.file ? "Arquivo enviado" : "Link externo"}
+                      className={`rounded-btn mt-0.5 flex size-8 shrink-0 items-center justify-center ${
+                        m.file ? "bg-accent/15 text-accent" : "bg-warning/15 text-warning"
+                      }`}
+                    >
+                      {m.file ? (
+                        <FileText className="size-4" aria-hidden />
+                      ) : (
+                        <Link2 className="size-4" aria-hidden />
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-medium">{m.title}</p>
+                      <p className="text-muted text-xs">
+                        {MATERIAL_TYPES[m.type]} ·{" "}
+                        {m.file
+                          ? `Arquivo: ${m.file.originalName}`
+                          : `Link: ${m.externalUrl ? LINK_SOURCE_LABELS[linkSource(m.externalUrl)] : "—"}`}
+                      </p>
+                    </div>
+                  </div>
                 </Td>
                 <Td>
                   <p>{course?.title}</p>
