@@ -85,5 +85,5 @@ Cada projeto tem `.env.example` com a lista completa. Resumo:
 | `SESSION_SECRET` | admin (reservada; a sessão do admin não depende dela hoje) |
 | `ADMIN_URL`, `PLATAFORMA_URL` | admin |
 | `NEXT_PUBLIC_SITE_URL` | portfolio, plataforma (endereço do próprio site) |
-| `NEXT_PUBLIC_PLATAFORMA_URL` | portfolio (links para a plataforma) |
+| `NEXT_PUBLIC_PLATAFORMA_URL` | portfolio (links para a plataforma; vazia = página "Aulas em desenvolvimento") |
 | `NEXT_PUBLIC_PORTFOLIO_URL` | plataforma (links para o portfólio) |

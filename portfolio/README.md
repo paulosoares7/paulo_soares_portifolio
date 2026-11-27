@@ -35,7 +35,11 @@ npm run portfolio:dev                             # http://localhost:3000
 | `/contato` | RF04 | Formulário salvo em `contact_messages` (aparece no painel), aviso por e-mail via Resend |
 
 O menu "Aulas", o ícone "Aulas" e a seção Aulas da home levam à plataforma
-(`NEXT_PUBLIC_PLATAFORMA_URL`, porta 3002 em desenvolvimento).
+(`NEXT_PUBLIC_PLATAFORMA_URL`, porta 3002 em desenvolvimento). Com a variável
+**vazia**, a plataforma é tratada como fora do ar: esses links levam à página
+`/aulas`, com o aviso "Aulas em desenvolvimento", e a seção da home mostra os
+grupos sem link e o selo "em desenvolvimento". Para ligar a plataforma, basta
+preencher a variável (na Vercel: Environment Variables) e publicar de novo.
 
 ## Conteúdo que vem do painel
 

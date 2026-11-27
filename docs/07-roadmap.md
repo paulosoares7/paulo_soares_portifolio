@@ -38,6 +38,14 @@ Total estimado: cerca de 12h50.
 Em todas: testes do Playwright e documentação junto (requisitos no `docs/02`,
 fluxos no `docs/05`, páginas no `docs/06`).
 
+## Portfólio antes da plataforma
+
+O portfólio pode ir ao ar sozinho. Enquanto `NEXT_PUBLIC_PLATAFORMA_URL`
+estiver vazia, todos os links "Aulas" (menu, ícone, rodapé e seção da home)
+levam à página `/aulas` com o aviso "Aulas em desenvolvimento" (27/11/2026).
+Quando a plataforma for publicada: preencher a variável na Vercel com o
+endereço dela e publicar o portfólio de novo. Nada no código muda.
+
 ## Pendências por credencial
 
 | Funcionalidade | Situação | Credencial |

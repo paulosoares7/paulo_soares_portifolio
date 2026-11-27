@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { GraduationCap, House, Library, Mail, UserRound } from "lucide-react";
-import { plataformaUrl } from "@/lib/links";
+import { PLATAFORMA_ONLINE, plataformaUrl } from "@/lib/links";
 
 // "Aulas" leva à plataforma (outro projeto): link comum <a>, não <Link>.
+// Com a plataforma fora do ar, leva à página /aulas deste portfólio (aviso).
+const LESSONS_EXTERNAL = PLATAFORMA_ONLINE;
 const TOP_LINKS = [
   { href: "/", label: "Início" },
   { href: "/sobre", label: "Sobre" },
   { href: "/publicacoes", label: "Publicações" },
-  { href: plataformaUrl(), label: "Aulas", external: true },
+  { href: plataformaUrl(), label: "Aulas", external: LESSONS_EXTERNAL },
   { href: "/contato", label: "Contato" },
 ];
 
@@ -19,7 +21,7 @@ const BOTTOM_LINKS = [
   { href: "/", label: "Início", icon: House },
   { href: "/sobre", label: "Sobre", icon: UserRound },
   { href: "/publicacoes", label: "Publicações", icon: Library },
-  { href: plataformaUrl(), label: "Aulas", icon: GraduationCap, external: true },
+  { href: plataformaUrl(), label: "Aulas", icon: GraduationCap, external: LESSONS_EXTERNAL },
   { href: "/contato", label: "Contato", icon: Mail },
 ];
 
