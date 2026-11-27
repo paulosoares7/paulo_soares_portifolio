@@ -46,7 +46,7 @@ export function MaterialEmbed({
         </a>
       </span>
       {open ? (
-        <div className="rounded-btn border-border w-full basis-full overflow-hidden border bg-black">
+        <div className="rounded-btn border-border bg-surface-2 w-full basis-full overflow-hidden border">
           <iframe
             src={embedUrl}
             title={title}

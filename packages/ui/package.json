@@ -6,6 +6,8 @@
   "type": "module",
   "exports": {
     "./theme.css": "./src/theme.css",
+    "./tokens.css": "./src/tokens.css",
+    "./theme-color": "./src/theme-color.ts",
     "./Badge": "./src/Badge.tsx",
     "./Button": "./src/Button.tsx",
     "./Container": "./src/Container.tsx",

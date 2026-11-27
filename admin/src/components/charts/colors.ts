@@ -1,4 +1,8 @@
 // Cores das séries dos gráficos, em ordem fixa (a série 1 é sempre azul).
-// Conferidas para daltonismo e contraste sobre o fundo dos cartões (#112233).
-// Não usar as cores de status (success/warning/danger) como série.
-export const SERIES_COLORS = ["#338ced", "#e76624", "#00a888"] as const;
+// Os valores ficam em packages/ui/src/tokens.css (--color-chart-*); aqui só
+// as referências, para os gráficos acompanharem o tema.
+export const SERIES_COLORS = [
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+] as const;

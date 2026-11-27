@@ -1,0 +1,84 @@
+/*
+ * Tokens visuais dos três apps (admin, portfolio e plataforma).
+ * Única fonte das cores: os componentes usam só estas classes (bg-bg,
+ * text-muted, border-border...), nunca cores fixas. Valores em
+ * docs/06-interface.md (paleta do modelo Jacob, tema escuro).
+ *
+ * Uso no globals.css:
+ *   @import "tailwindcss";
+ *   @import "@portfolio/ui/tokens.css";   (admin)
+ *   @import "@portfolio/ui/theme.css";    (portfolio e plataforma; já inclui este arquivo)
+ *
+ * O Tailwind gera cada token como variável CSS (--color-bg...) e as classes
+ * leem a variável: um tema novo só precisa redefinir as variáveis.
+ */
+@theme {
+  --color-bg: #0b1622;
+  --color-surface: #112233;
+  --color-surface-2: #0e1c2b;
+  --color-border: #1e3a52;
+  --color-accent: #0ea5e9;
+  --color-accent-strong: #0284c7;
+  --color-text: #f1f5f9;
+  --color-muted: #94a3b8;
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-danger: #ef4444;
+  /* Fundo escurecido atrás dos modais. */
+  --color-overlay: rgb(0 0 0 / 0.6);
+
+  /* Séries dos gráficos do admin, em ordem fixa (a série 1 é sempre azul).
+     Conferidas para daltonismo e contraste sobre a cor surface. Não usar as
+     cores de status (success/warning/danger) como série. */
+  --color-chart-1: #338ced;
+  --color-chart-2: #e76624;
+  --color-chart-3: #00a888;
+
+  /* Brilho do destaque (círculos com iniciais, órbitas). */
+  --shadow-glow: 0 0 80px color-mix(in srgb, var(--color-accent) 30%, transparent);
+  --shadow-glow-strong: 0 0 90px color-mix(in srgb, var(--color-accent) 45%, transparent);
+
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-btn: 8px;
+  --radius-card: 12px;
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Barra de rolagem discreta. */
+* {
+  scrollbar-color: var(--color-border) transparent;
+}
+
+/* Transição suave ao trocar de página (template.tsx de cada app). Curta para
+   não atrasar a navegação; some para quem prefere menos movimento. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-in {
+  animation: page-in 220ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-in {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

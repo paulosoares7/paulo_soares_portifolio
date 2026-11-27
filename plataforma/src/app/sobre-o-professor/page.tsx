@@ -41,7 +41,7 @@ export default async function ProfessorPage() {
         ) : (
           <span
             aria-hidden
-            className="bg-accent/15 text-accent flex size-40 items-center justify-center rounded-full text-5xl font-bold shadow-[0_0_80px_rgba(14,165,233,0.25)]"
+            className="bg-accent/15 text-accent shadow-glow flex size-40 items-center justify-center rounded-full text-5xl font-bold"
           >
             {name.charAt(0)}
           </span>

@@ -27,7 +27,7 @@ export function Modal({ open, onClose, title, children, wide = false }: ModalPro
       ref={ref}
       onClose={onClose}
       aria-labelledby="modal-title"
-      className={`m-auto w-[calc(100%-2rem)] ${wide ? "max-w-3xl" : "max-w-lg"} rounded-card border-border bg-surface text-text border p-0 backdrop:bg-black/60`}
+      className={`m-auto w-[calc(100%-2rem)] ${wide ? "max-w-3xl" : "max-w-lg"} rounded-card border-border bg-surface text-text backdrop:bg-overlay border p-0`}
     >
       {open ? (
         <div className="p-5">

@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { getSiteIdentity, SITE_URL } from "@/lib/site";
 import "./globals.css";
+import { THEME_COLOR_DARK } from "@portfolio/ui/theme-color";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -13,7 +14,7 @@ const poppins = Poppins({
   display: "swap",
 });
 
-export const viewport: Viewport = { themeColor: "#0B1622" };
+export const viewport: Viewport = { themeColor: THEME_COLOR_DARK };
 
 /** Metadados padrão a partir do perfil (RNF06). */
 export async function generateMetadata(): Promise<Metadata> {

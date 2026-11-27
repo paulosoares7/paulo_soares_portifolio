@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
+import { THEME_COLOR_DARK } from "@portfolio/ui/theme-color";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
   // Painel privado: fora dos buscadores.
   robots: { index: false, follow: false },
 };
+
+export const viewport: Viewport = { themeColor: THEME_COLOR_DARK };
 
 /** Layout raiz: fonte Poppins e tema escuro. */
 export default function RootLayout({ children }: { children: React.ReactNode }) {

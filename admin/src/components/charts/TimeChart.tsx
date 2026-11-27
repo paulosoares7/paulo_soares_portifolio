@@ -168,7 +168,7 @@ export function TimeChart({
                   <path
                     key={p.key}
                     d={`M${left},${base} V${base - h + r} Q${left},${base - h} ${left + r},${base - h} H${left + barW - r} Q${left + barW},${base - h} ${left + barW},${base - h + r} V${base} Z`}
-                    fill={SERIES_COLORS[0]}
+                    style={{ fill: SERIES_COLORS[0] }}
                     opacity={hover === null || hover === i ? 1 : 0.55}
                   />
                 );
@@ -177,7 +177,7 @@ export function TimeChart({
                 <g key={name}>
                   <polyline
                     fill="none"
-                    stroke={SERIES_COLORS[s]}
+                    style={{ stroke: SERIES_COLORS[s] }}
                     strokeWidth={2}
                     strokeLinejoin="round"
                     strokeLinecap="round"
@@ -188,8 +188,7 @@ export function TimeChart({
                       cx={x(hover)}
                       cy={y(points[hover]?.values[s] ?? 0)}
                       r={4}
-                      fill={SERIES_COLORS[s]}
-                      stroke="var(--color-surface)"
+                      style={{ fill: SERIES_COLORS[s], stroke: "var(--color-surface)" }}
                       strokeWidth={2}
                     />
                   ) : null}

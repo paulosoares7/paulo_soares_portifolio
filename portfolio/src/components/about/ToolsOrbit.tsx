@@ -42,7 +42,7 @@ export function ToolsOrbit({ tools, monogram }: { tools: string[]; monogram: str
         <div className="border-accent/20 absolute bottom-[-120px] left-1/2 h-[240px] w-[520px] -translate-x-1/2 rounded-[50%] border" />
         <div className="border-accent/25 absolute bottom-[-90px] left-1/2 h-[180px] w-[400px] -translate-x-1/2 rounded-[50%] border" />
         <div className="border-accent/30 absolute bottom-[-60px] left-1/2 h-[120px] w-[280px] -translate-x-1/2 rounded-[50%] border" />
-        <div className="bg-accent/20 text-accent absolute bottom-4 left-1/2 flex size-24 -translate-x-1/2 items-center justify-center rounded-full text-3xl font-bold shadow-[0_0_90px_rgba(14,165,233,0.45)]">
+        <div className="bg-accent/20 text-accent shadow-glow-strong absolute bottom-4 left-1/2 flex size-24 -translate-x-1/2 items-center justify-center rounded-full text-3xl font-bold">
           {monogram}
           <span className="text-text">.</span>
         </div>

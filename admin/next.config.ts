@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // O pacote do banco é TypeScript puro dentro do monorepo.
-  transpilePackages: ["@portfolio/database"],
+  // Os pacotes do banco e do tema são TypeScript puro dentro do monorepo.
+  transpilePackages: ["@portfolio/database", "@portfolio/ui"],
   // Abrir pelo celular na mesma rede Wi-Fi (só em desenvolvimento): o IP do
   // computador fica em DEV_HOST, no .env.local deste projeto.
   allowedDevOrigins: process.env.DEV_HOST ? [process.env.DEV_HOST] : [],

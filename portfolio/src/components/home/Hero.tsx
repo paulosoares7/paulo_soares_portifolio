@@ -111,7 +111,7 @@ function HeroPortrait({ photoUrl, name }: { photoUrl: string | null; name: strin
       <div className="orbit-spin border-accent/30 absolute inset-0 rounded-full border" />
       <div className="orbit-spin-reverse border-accent/40 absolute inset-8 rotate-60 [transform:rotateX(65deg)] rounded-[50%] border" />
       <div className="orbit-spin border-accent/30 absolute inset-16 rounded-full border border-dashed" />
-      <div className="bg-accent/15 text-accent relative flex size-32 items-center justify-center rounded-full text-4xl font-bold shadow-[0_0_80px_rgba(14,165,233,0.35)]">
+      <div className="bg-accent/15 text-accent shadow-glow relative flex size-32 items-center justify-center rounded-full text-4xl font-bold">
         {initials}
         <span className="text-text">.</span>
       </div>

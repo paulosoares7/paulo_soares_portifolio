@@ -53,17 +53,37 @@ adaptados ao tema escuro. As imagens estão em [`inspiracoes/`](inspiracoes/).
 
 ## Tokens visuais (Tailwind)
 
+Os tokens ficam num único arquivo, `packages/ui/src/tokens.css`, usado pelos
+três apps (o admin importa `@portfolio/ui/tokens.css`; o portfolio e a
+plataforma, `@portfolio/ui/theme.css`, que já o inclui). Os componentes usam
+só as classes dos tokens (`bg-surface`, `text-muted`, `border-border`...),
+nunca cores fixas. O Tailwind gera cada token como variável CSS, então um
+tema novo só redefine as variáveis.
+
 | Token | Valor | Uso |
 | --- | --- | --- |
 | `bg` | `#0B1622` | Fundo das páginas |
 | `surface` | `#112233` | Cartões e menus |
+| `surface-2` | `#0E1C2B` | Campos, blocos internos e fundo do visualizador embutido |
 | `border` | `#1E3A52` | Bordas e divisórias |
 | `accent` | `#0EA5E9` | Botões, links, título em destaque, barra de progresso |
 | `text` | `#F1F5F9` | Texto principal |
 | `muted` | `#94A3B8` | Texto secundário |
 | `success` / `warning` / `danger` | `#22C55E` / `#EAB308` / `#EF4444` | Selos Concluído/Fácil, Médio, Difícil |
+| `accent-strong` | `#0284C7` | Destaque ao passar o mouse |
+| `overlay` | preto 60% | Fundo escurecido atrás dos modais |
+| `chart-1` / `chart-2` / `chart-3` | `#338CED` / `#E76624` / `#00A888` | Séries dos gráficos do admin, sempre nessa ordem |
+| `shadow-glow` / `shadow-glow-strong` | brilho de 30% / 45% do `accent` | Círculos com iniciais e órbitas |
 | Fonte | Poppins | Títulos e texto |
 | Raio | 8 px (botões), 12 px (cartões) | — |
 
-As cores foram aproximadas a partir da imagem do Jacob e podem ser ajustadas
-em `site_settings`.
+As cores foram aproximadas a partir da imagem do Jacob.
+
+A cor da barra do navegador (meta `theme-color`) não aceita variável CSS: ela
+fica em `packages/ui/src/theme-color.ts` e deve mudar junto com o `bg`.
+
+Exceções que continuam com cor fixa, de propósito: o logo do Google (cores da
+marca), os e-mails (os programas de e-mail só aceitam cor escrita no HTML), a
+cor de cada disciplina (é um dado cadastrado no painel), o fundo preto do
+player de vídeo e a página de impressão dos relatórios (papel branco; vai usar
+o tema claro quando ele existir).

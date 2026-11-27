@@ -1,48 +1,16 @@
 /*
- * Tema compartilhado do portfolio e da plataforma.
- * Tokens de docs/06-interface.md (paleta do modelo Jacob, tema escuro).
+ * Tema compartilhado do portfolio e da plataforma: os tokens (tokens.css,
+ * comuns também ao admin) e os estilos só dos sites públicos.
  * Uso no globals.css de cada app:
  *   @import "tailwindcss";
  *   @import "@portfolio/ui/theme.css";
  */
 
+@import "./tokens.css";
+
 /* O Tailwind não procura classes dentro de node_modules: esta linha manda
    ler os componentes deste pacote. */
 @source "./";
-
-/* Tokens de docs/06-interface.md (paleta do modelo Jacob, tema escuro). */
-@theme {
-  --color-bg: #0b1622;
-  --color-surface: #112233;
-  --color-surface-2: #0e1c2b;
-  --color-border: #1e3a52;
-  --color-accent: #0ea5e9;
-  --color-accent-strong: #0284c7;
-  --color-text: #f1f5f9;
-  --color-muted: #94a3b8;
-  --color-success: #22c55e;
-  --color-warning: #eab308;
-  --color-danger: #ef4444;
-
-  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
-
-  --radius-btn: 8px;
-  --radius-card: 12px;
-}
-
-html {
-  color-scheme: dark;
-  scroll-behavior: smooth;
-}
-
-body {
-  background-color: var(--color-bg);
-  color: var(--color-text);
-}
-
-* {
-  scrollbar-color: var(--color-border) transparent;
-}
 
 /* Texto em Markdown (bio, aulas, enunciados). */
 .prose-site p {
@@ -93,26 +61,8 @@ body {
   .orbit-spin-reverse {
     animation: none;
   }
-  html {
-    scroll-behavior: auto;
-  }
 }
 
-/* Transição suave ao trocar de página (template.tsx de cada app). Curta para
-   não atrasar a navegação; some para quem prefere menos movimento. */
-@keyframes page-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.page-in {
-  animation: page-in 220ms ease-out both;
-}
 /* Menus suspensos (menu do avatar). */
 @keyframes menu-in {
   from {
@@ -122,10 +72,5 @@ body {
   to {
     opacity: 1;
     transform: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .page-in {
-    animation: none;
   }
 }

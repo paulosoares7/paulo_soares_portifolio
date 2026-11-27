@@ -125,7 +125,13 @@ function opensInNewTab(link: SocialLinkItem): boolean {
  * Fileira de ícones redondos das redes (home e rodapé). O nome aparece ao
  * passar o mouse ou focar pelo teclado, e vai no aria-label.
  */
-export function SocialLinks({ links, size = "md" }: { links: SocialLinkItem[]; size?: "sm" | "md" }) {
+export function SocialLinks({
+  links,
+  size = "md",
+}: {
+  links: SocialLinkItem[];
+  size?: "sm" | "md";
+}) {
   if (links.length === 0) return null;
   const box = size === "sm" ? "size-9" : "size-11";
   return (
