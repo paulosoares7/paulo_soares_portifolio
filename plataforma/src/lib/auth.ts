@@ -26,6 +26,16 @@ const ONE_HOUR = 60 * 60;
 
 const googleConfigured = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
+// Em desenvolvimento, diz no terminal por que o botão do Google não funciona
+// (uma vez, quando o servidor carrega este arquivo). Passo a passo em
+// docs/guia-login-google.md.
+if (!googleConfigured && process.env.NODE_ENV === "development") {
+  const missing = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"].filter((name) => !process.env[name]);
+  console.warn(
+    `[login] "Entrar com Google" desligado: falta ${missing.join(" e ")} no plataforma/.env.local (veja docs/guia-login-google.md).`,
+  );
+}
+
 /**
  * Primeiro nome, usado como nome no fórum (display_name) no cadastro.
  * @param name Nome completo.
