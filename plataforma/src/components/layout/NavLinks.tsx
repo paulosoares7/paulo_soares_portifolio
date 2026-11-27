@@ -11,12 +11,12 @@ const TOP_LINKS = [
   { href: "/assinar", label: "Assinar" },
 ];
 
-// Menu inferior do celular: Início, Aulas, Professor e Minha área.
+// Menu inferior do celular: Início, Aulas, Professor e Painel.
 const BOTTOM_LINKS = [
   { href: "/", label: "Início", icon: House },
   { href: "/aulas", label: "Aulas", icon: BookOpen },
   { href: "/sobre-o-professor", label: "Professor", icon: UserSquare },
-  { href: "/minha-area", label: "Minha área", icon: UserRound },
+  { href: "/minha-area", label: "Painel", icon: UserRound },
 ];
 
 /**

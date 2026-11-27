@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
+  AlertTriangle,
   ArrowRight,
   Award,
+  CalendarCheck,
   BookOpen,
   CheckCircle2,
   ClipboardList,
   CreditCard,
   Flame,
   PlayCircle,
+  Sparkles,
   Star,
   Trophy,
 } from "lucide-react";
@@ -21,9 +25,10 @@ import { getViewer } from "@/lib/access";
 import { MAX_SESSIONS } from "@/lib/auth";
 import { formatDate, formatDateTime, formatDueDate, formatMoney } from "@/lib/format";
 import { loginUrl } from "@/lib/safe-next";
-import { getStudentArea, getStudentDashboard } from "@/lib/student-area";
+import { getFreeLessons } from "@/lib/home";
+import { getStudentArea, getStudentDashboard, STUDY_WINDOW_DAYS } from "@/lib/student-area";
 
-export const metadata: Metadata = { title: "Minha área", robots: { index: false } };
+export const metadata: Metadata = { title: "Meu painel", robots: { index: false } };
 
 const card = "rounded-card border-border bg-surface border p-6";
 
@@ -72,10 +77,34 @@ function ProgressBar({
   );
 }
 
+/** Número de destaque do painel ("12 aulas concluídas"). */
+function StatTile({
+  icon: Icon,
+  value,
+  label,
+  children,
+}: {
+  icon: typeof BookOpen;
+  value: string;
+  label: string;
+  children?: ReactNode;
+}) {
+  return (
+    <li className="rounded-card border-border bg-surface flex flex-col gap-1 border p-4">
+      <Icon className="text-accent size-5" aria-hidden />
+      <span className="mt-1 text-2xl font-bold tabular-nums">{value}</span>
+      <span className="text-muted text-sm">{label}</span>
+      {children}
+    </li>
+  );
+}
+
 /**
- * Minha área: painel do aluno com continuar de onde parou, aulas vistas por
+ * Painel do aluno (/minha-area), a tela de início depois do login: avisos da
+ * assinatura, números de desempenho, continuar de onde parou, aulas vistas por
  * último, progresso por disciplina, atividades recentes e média, assinatura
- * com a próxima cobrança, conquistas (em breve) e a conta.
+ * com a próxima cobrança, conquistas (em breve) e a conta. Vale para quem
+ * assina e para quem não assina (que vê o conteúdo grátis e o convite).
  */
 export default async function StudentAreaPage() {
   const viewer = await getViewer();
@@ -91,10 +120,99 @@ export default async function StudentAreaPage() {
     signInMethods.password ? "e-mail e senha" : null,
   ].filter(Boolean);
   const isCourtesy = subscription?.gateway === "manual";
+  // Aluno novo: boas-vindas com as aulas grátis para começar.
+  const starters = dashboard.hasHistory ? [] : await getFreeLessons();
+  const studiedDays = dashboard.studyDays.filter((d) => d.studied).length;
 
   return (
     <Container>
-      <PageTitle title="Minha" accent="área" description={`Olá, ${viewer.name.split(" ")[0]}!`} />
+      <PageTitle title="Meu" accent="painel" description={`Olá, ${viewer.name.split(" ")[0]}!`} />
+
+      {subscription?.status === "past_due" ? (
+        <p
+          role="status"
+          className="rounded-card border-warning/50 bg-warning/10 mb-6 flex items-start gap-3 border p-4 text-sm"
+        >
+          <AlertTriangle className="text-warning mt-0.5 size-5 shrink-0" aria-hidden />
+          <span>
+            O pagamento da assinatura está atrasado. Pague a fatura para não perder o acesso às
+            aulas das suas disciplinas.{" "}
+            <a href="#assinatura" className="text-accent underline-offset-2 hover:underline">
+              Ver a assinatura
+            </a>
+          </span>
+        </p>
+      ) : null}
+      {subscription?.status === "canceled" && subscription.currentPeriodEnd ? (
+        <p
+          role="status"
+          className="rounded-card border-border bg-surface-2 mb-6 flex items-start gap-3 border p-4 text-sm"
+        >
+          <AlertTriangle className="text-muted mt-0.5 size-5 shrink-0" aria-hidden />
+          <span>
+            Assinatura cancelada: o acesso continua até {formatDate(subscription.currentPeriodEnd)}.
+            Depois, ficam abertas as aulas grátis.
+          </span>
+        </p>
+      ) : null}
+      {!subscription ? (
+        <aside
+          aria-label="Convite para assinar"
+          className="rounded-card border-accent/40 bg-accent/5 mb-6 flex flex-col gap-3 border p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="flex items-start gap-3 text-sm">
+            <Sparkles className="text-accent mt-0.5 size-5 shrink-0" aria-hidden />
+            <span>
+              Você está na versão gratuita: as aulas grátis de cada disciplina estão abertas. Assine
+              para liberar todas as aulas, atividades e materiais.
+            </span>
+          </p>
+          <ButtonLink href="/assinar" className="shrink-0">
+            Quero assinar
+          </ButtonLink>
+        </aside>
+      ) : null}
+
+      <ul aria-label="Seu desempenho" className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile
+          icon={CheckCircle2}
+          value={String(dashboard.completedCount)}
+          label="aula(s) concluída(s)"
+        />
+        <StatTile
+          icon={BookOpen}
+          value={String(dashboard.courseProgress.length)}
+          label="disciplina(s) em estudo"
+        />
+        <StatTile
+          icon={ClipboardList}
+          value={dashboard.averagePercent === null ? "—" : `${dashboard.averagePercent}%`}
+          label={`média de acertos · ${dashboard.attemptsCount} atividade(s)`}
+        />
+        <StatTile
+          icon={CalendarCheck}
+          value={`${studiedDays} de ${STUDY_WINDOW_DAYS}`}
+          label="dias de estudo na semana"
+        >
+          <ol className="mt-2 flex gap-1" aria-label="Dias de estudo nos últimos 7 dias">
+            {dashboard.studyDays.map((day) => (
+              <li
+                key={day.key}
+                className="flex flex-1 flex-col items-center gap-1"
+                aria-label={`${day.label}: ${day.studied ? "estudou" : "sem estudo"}`}
+              >
+                <span
+                  aria-hidden
+                  className={`h-2 w-full rounded-full ${day.studied ? "bg-accent" : "bg-border"}`}
+                />
+                <span aria-hidden className="text-muted text-[10px]">
+                  {day.label}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </StatTile>
+      </ul>
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <section aria-labelledby="continuar" className={`${card} flex flex-col gap-4`}>
@@ -122,11 +240,32 @@ export default async function StudentAreaPage() {
             </Link>
           ) : (
             <div className="flex flex-col items-start gap-3">
-              <p className="text-muted text-sm">
-                Você ainda não começou nenhuma aula. Que tal a primeira?
+              <p className="text-sm">
+                <strong>Boas-vindas!</strong>{" "}
+                <span className="text-muted">
+                  Você ainda não começou nenhuma aula. Comece por uma aula grátis:
+                </span>
               </p>
+              {starters.length ? (
+                <ul aria-label="Comece por aqui" className="flex w-full flex-col gap-2">
+                  {starters.map((l) => (
+                    <li key={l.id}>
+                      <Link
+                        href={l.href}
+                        className="rounded-btn border-border bg-surface-2 hover:border-accent/60 flex items-center gap-3 border p-3 text-sm transition-colors"
+                      >
+                        <PlayCircle className="text-accent size-5 shrink-0" aria-hidden />
+                        <span className="min-w-0 flex-1 truncate">{l.title}</span>
+                        <span className="text-muted hidden shrink-0 text-xs sm:inline">
+                          {l.courseTitle}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               <ButtonLink href="/aulas" variant="outline">
-                Ver as aulas
+                Ver todas as aulas
               </ButtonLink>
             </div>
           )}

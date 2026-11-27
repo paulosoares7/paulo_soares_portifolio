@@ -1,5 +1,6 @@
 import { Clapperboard, Lock } from "lucide-react";
 import { ButtonLink } from "@portfolio/ui/Button";
+import { formatMoney } from "@/lib/format";
 import type { PlayerSource } from "@/lib/video";
 
 const frame =
@@ -8,13 +9,15 @@ const frame =
 type VideoPlayerProps = {
   title: string;
   player: PlayerSource | "locked" | "coming-soon";
+  /** Plano à venda, para o preço no cadeado. */
+  plan?: { priceCents: number; maxCourses: number } | null;
 };
 
 /**
  * Player grande da aula (inspiração 06). Escolhe a fonte pelo provedor
  * (docs/03-arquitetura.md). Aula paga sem acesso: só o cadeado, sem vídeo.
  */
-export function VideoPlayer({ title, player }: VideoPlayerProps) {
+export function VideoPlayer({ title, player, plan = null }: VideoPlayerProps) {
   if (player === "locked") {
     return (
       <div
@@ -26,7 +29,9 @@ export function VideoPlayer({ title, player }: VideoPlayerProps) {
           </span>
           <p className="text-lg font-semibold">Aula para assinantes</p>
           <p className="text-muted max-w-sm text-sm">
-            Assine para assistir a esta aula e a todas as aulas das suas disciplinas.
+            {plan
+              ? `Assine por ${formatMoney(plan.priceCents)} por mês para assistir a esta aula e a todas as aulas de até ${plan.maxCourses} disciplinas.`
+              : "Assine para assistir a esta aula e a todas as aulas das suas disciplinas."}
           </p>
           <ButtonLink href="/assinar">Quero assinar</ButtonLink>
         </div>

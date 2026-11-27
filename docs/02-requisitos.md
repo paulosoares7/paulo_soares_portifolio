@@ -37,7 +37,8 @@ na v1 · **Could** = pode ficar para a v2.
 | RF12 | Agendar a troca de uma disciplina ocupada; a troca vale na renovação; só uma troca agendada por ciclo; pode cancelar o agendamento | Must |
 | RF13 | Criar conta e entrar com Google ou com e-mail e senha (confirmação do e-mail por link); até 2 sessões ativas; sair | Must |
 | RF14 | Esqueci a senha: link por e-mail válido por 1 hora e de uso único; ao redefinir, todas as sessões são encerradas | Must |
-| RF15 | Minha área: disciplinas da assinatura, próxima cobrança, link da fatura, troca agendada, progresso e "continuar de onde parou" | Must |
+| RF15 | Painel do aluno (`/minha-area`), a tela de início depois do login, com ou sem assinatura: avisos da assinatura, números de desempenho (aulas concluídas, disciplinas em estudo, média de acertos, dias de estudo nos últimos 7 dias), "continuar de onde parou", últimas aulas, progresso por disciplina, atividades recentes, disciplinas da assinatura, próxima cobrança, link da fatura e troca agendada. Aluno novo vê boas-vindas com aulas grátis para começar; quem não assina vê o convite para assinar. A página inicial, para quem está logado, mostra "Olá, Nome" com o continuar de onde parou | Must |
+| RF15a | Convite para assinar: ao abrir a última aula grátis de uma disciplina, quem não tem a disciplina na assinatura vê um modal (uma vez por visita) e um cartão fixo abaixo do vídeo, com o preço do plano vindo do banco. A aula com cadeado mostra o mesmo preço | Must |
 | RF16 | Cancelar a assinatura pela minha área (acesso segue até o fim do período pago) | Must |
 | RF17 | Atividades com correção automática (múltipla escolha e numérica com tolerância), resolução conforme a regra da atividade e histórico de tentativas | Must |
 | RF18 | Materiais (PDF) exibidos só dentro da plataforma, com marca d'água e sem botão de download | Must |

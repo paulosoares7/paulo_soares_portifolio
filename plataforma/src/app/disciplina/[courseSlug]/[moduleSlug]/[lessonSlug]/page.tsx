@@ -6,11 +6,14 @@ import { LessonProgressButton } from "@/components/course/LessonProgressButton";
 import { LessonRow } from "@/components/course/LessonRow";
 import { MaterialList } from "@/components/course/MaterialList";
 import { VideoPlayer } from "@/components/player/VideoPlayer";
+import { SubscribeCta } from "@/components/subscription/SubscribeCta";
+import { SubscribeInvite } from "@/components/subscription/SubscribeInvite";
 import { Badge } from "@portfolio/ui/Badge";
 import { Breadcrumb } from "@/components/catalog/Breadcrumb";
 import { Container } from "@portfolio/ui/Container";
 import { Markdown } from "@portfolio/ui/Markdown";
 import { requireLoginForLocked } from "@/lib/access";
+import { getActivePlan } from "@/lib/catalog";
 import { getLessonPage } from "@/lib/lesson";
 import { isLessonCompleted } from "@/lib/progress";
 
@@ -31,7 +34,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * Página da aula (RF07): player grande, aulas do módulo ao lado, resumo,
  * texto de apoio, materiais e comentários. Só aula grátis (ou de assinante)
  * recebe o vídeo; as demais mostram o cadeado (RF08). Visitante sem login
- * numa aula paga vai para /entrar e volta para cá depois.
+ * numa aula paga vai para /entrar e volta para cá depois. Na última aula
+ * grátis da disciplina, quem não assina recebe o convite para assinar ao abrir
+ * a aula (modal uma vez por visita e cartão fixo abaixo do vídeo).
  */
 export default async function LessonPage({ params }: Props) {
   const { courseSlug, moduleSlug, lessonSlug } = await params;
@@ -50,7 +55,10 @@ export default async function LessonPage({ params }: Props) {
     next,
     materials,
     discussions,
+    inviteToSubscribe,
   } = data;
+  // Preço do plano só para o cadeado e o convite.
+  const plan = access === "locked" || inviteToSubscribe ? await getActivePlan() : null;
   // Aluno logado com acesso: a aula entra no progresso dele.
   const tracked = studentId !== null && access !== "locked";
   const completed = tracked ? await isLessonCompleted(studentId, lesson.id) : false;
@@ -72,7 +80,7 @@ export default async function LessonPage({ params }: Props) {
 
       <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0">
-          <VideoPlayer title={lesson.title} player={player} />
+          <VideoPlayer title={lesson.title} player={player} plan={plan} />
 
           <div className="mt-6 flex flex-wrap items-center gap-2">
             {access === "free" ? <Badge tone="success">Aula grátis</Badge> : null}
@@ -85,6 +93,13 @@ export default async function LessonPage({ params }: Props) {
           {tracked ? (
             <div className="mt-4">
               <LessonProgressButton lessonId={lesson.id} initialDone={completed} />
+            </div>
+          ) : null}
+
+          {inviteToSubscribe ? (
+            <div className="mt-6">
+              <SubscribeInvite courseId={course.id} courseTitle={course.title} plan={plan} />
+              <SubscribeCta plan={plan} compact />
             </div>
           ) : null}
 

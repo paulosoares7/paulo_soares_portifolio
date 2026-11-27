@@ -5,9 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { BookOpen, CreditCard, LayoutDashboard, LogIn, LogOut } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { loginReturnPath } from "@/lib/safe-next";
 
 const ITEMS = [
-  { href: "/minha-area", label: "Minha área", icon: LayoutDashboard },
+  { href: "/minha-area", label: "Painel", icon: LayoutDashboard },
   { href: "/minha-area#disciplinas", label: "Minhas disciplinas", icon: BookOpen },
   { href: "/minha-area#assinatura", label: "Assinatura", icon: CreditCard },
 ];
@@ -24,7 +25,7 @@ function initials(name: string): string {
 }
 
 /**
- * Avatar do aluno no cabeçalho com menu (Minha área, Minhas disciplinas,
+ * Avatar do aluno no cabeçalho com menu (Painel, Minhas disciplinas,
  * Assinatura, Sair). Fecha ao clicar/tocar fora, com Esc e ao navegar.
  * Sem login, mostra "Entrar". A sessão é lida no navegador para as páginas
  * públicas continuarem estáticas (SEO e velocidade).
@@ -71,7 +72,9 @@ export function UserMenu() {
   }
 
   if (!data) {
-    const next = pathname && pathname !== "/" ? `?next=${encodeURIComponent(pathname)}` : "";
+    // Da aula ou atividade, volta para ela; do resto, vai para o painel.
+    const back = loginReturnPath(pathname);
+    const next = back ? `?next=${encodeURIComponent(back)}` : "";
     return (
       <Link
         href={`/entrar${next}`}

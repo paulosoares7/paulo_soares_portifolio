@@ -63,7 +63,7 @@ test("menu do avatar, progresso da aula e Minha área", async ({ page }) => {
   const avatar = page.getByRole("button", { name: /Menu da conta de/ });
   await avatar.click();
   const menu = page.getByRole("menu", { name: "Conta" });
-  await expect(menu.getByRole("menuitem", { name: "Minha área" })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Painel" })).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "Minhas disciplinas" })).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "Assinatura" })).toBeVisible();
   await expect(menu.getByRole("menuitem", { name: "Sair" })).toBeVisible();

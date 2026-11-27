@@ -1,5 +1,40 @@
 // Dados da "Minha área" do aluno logado.
 import { prisma } from "@portfolio/database";
+import { DISPLAY_TIME_ZONE } from "@/lib/format";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Dias mostrados no "dias de estudo" do painel (hoje e os 6 anteriores). */
+export const STUDY_WINDOW_DAYS = 7;
+
+// Chave do dia no fuso de Manaus (AAAA-MM-DD) e o nome curto do dia.
+const dayKeyFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: DISPLAY_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+const weekdayFormatter = new Intl.DateTimeFormat("pt-BR", {
+  timeZone: DISPLAY_TIME_ZONE,
+  weekday: "short",
+});
+
+/** Um dia da faixa "dias de estudo". */
+export type StudyDay = { key: string; label: string; studied: boolean };
+
+/**
+ * Últimos 7 dias (do mais antigo para hoje), marcando os que tiveram estudo.
+ * @param dates Momentos de estudo (aula aberta ou concluída, vídeo, atividade).
+ * @param now Agora.
+ * @returns Os 7 dias com o nome curto ("seg") e se houve estudo.
+ */
+function studyDays(dates: Date[], now: Date): StudyDay[] {
+  const studied = new Set(dates.map((d) => dayKeyFormatter.format(d)));
+  return Array.from({ length: STUDY_WINDOW_DAYS }, (_, index) => {
+    const day = new Date(now.getTime() - (STUDY_WINDOW_DAYS - 1 - index) * DAY_MS);
+    const key = dayKeyFormatter.format(day);
+    return { key, label: weekdayFormatter.format(day).replace(".", ""), studied: studied.has(key) };
+  });
+}
 
 /**
  * Formas de entrar, sessões abertas e a assinatura vigente do aluno.
@@ -78,15 +113,19 @@ export type DashboardLesson = {
 };
 
 /**
- * Painel da Minha área: continuar de onde parou, aulas vistas por último,
- * progresso por disciplina, atividades recentes (com média) e a próxima
- * cobrança.
+ * Painel do aluno: continuar de onde parou, aulas vistas por último,
+ * progresso por disciplina, atividades recentes (com média), números de
+ * desempenho (aulas concluídas, dias de estudo na semana) e a próxima cobrança.
+ * Os minutos assistidos não entram: o YouTube (aulas grátis) não informa
+ * quanto foi visto, então o progresso vem do "Aula concluída".
  * @param studentId Aluno logado.
  * @param subscribedCourseIds Disciplinas das vagas (entram no progresso mesmo sem aula vista).
  * @returns Dados do painel.
  */
 export async function getStudentDashboard(studentId: number, subscribedCourseIds: number[]) {
-  const [progress, attempts, nextPayment] = await Promise.all([
+  const now = new Date();
+  const weekStart = new Date(now.getTime() - STUDY_WINDOW_DAYS * DAY_MS);
+  const [progress, attempts, nextPayment, plays] = await Promise.all([
     prisma.lessonProgress.findMany({
       where: { studentId, lesson: { status: "published" } },
       orderBy: { updatedAt: "desc" },
@@ -113,6 +152,10 @@ export async function getStudentDashboard(studentId: number, subscribedCourseIds
       where: { subscription: { studentId }, status: { in: ["pending", "overdue"] } },
       orderBy: { dueDate: "asc" },
       select: { dueDate: true, amountCents: true, status: true, invoiceUrl: true },
+    }),
+    prisma.accessLog.findMany({
+      where: { studentId, event: "play", createdAt: { gte: weekStart } },
+      select: { createdAt: true },
     }),
   ]);
 
@@ -166,8 +209,17 @@ export async function getStudentDashboard(studentId: number, subscribedCourseIds
       : [],
   );
 
+  const studyDates = [
+    ...progress.flatMap((p) => (p.completedAt ? [p.updatedAt, p.completedAt] : [p.updatedAt])),
+    ...attempts.flatMap((a) => (a.submittedAt ? [a.submittedAt] : [])),
+    ...plays.map((p) => p.createdAt),
+  ].filter((d) => d >= weekStart);
+
   return {
     continueLesson: lessons.find((l) => !l.completed) ?? null,
+    completedCount: lessons.filter((l) => l.completed).length,
+    studyDays: studyDays(studyDates, now),
+    hasHistory: progress.length > 0 || attempts.length > 0,
     recentLessons: lessons.slice(0, 5),
     courseProgress,
     recentAttempts: attempts.slice(0, 5).map((a) => ({
@@ -186,5 +238,35 @@ export async function getStudentDashboard(studentId: number, subscribedCourseIds
       ? Math.round(percents.reduce((s, v) => s + v, 0) / percents.length)
       : null,
     nextPayment,
+  };
+}
+
+/**
+ * Última aula aberta e ainda não concluída ("continuar de onde parou"), para a
+ * página inicial de quem está logado.
+ * @param studentId Aluno logado.
+ * @returns Aula com o link ou null.
+ */
+export async function getContinueLesson(
+  studentId: number,
+): Promise<{ title: string; href: string; course: string } | null> {
+  const row = await prisma.lessonProgress.findFirst({
+    where: {
+      studentId,
+      completedAt: null,
+      lesson: {
+        status: "published",
+        topic: { module: { status: "published", course: { status: "published" } } },
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+    select: { lesson: { select: lessonPathSelect } },
+  });
+  if (!row) return null;
+  const { module } = row.lesson.topic;
+  return {
+    title: row.lesson.title,
+    href: `/disciplina/${module.course.slug}/${module.slug}/${row.lesson.slug}`,
+    course: module.course.title,
   };
 }

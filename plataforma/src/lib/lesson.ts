@@ -7,6 +7,31 @@ import { toPlayerSource, type PlayerSource } from "@/lib/video";
 import { materialLinks } from "@/lib/material-links";
 
 /**
+ * Diz se a aula é a última aula grátis da disciplina (na ordem do curso:
+ * módulo, tópico e aula).
+ * @param lessonId Aula aberta.
+ * @param courseId Disciplina.
+ * @returns true se nenhuma aula grátis publicada vem depois dela.
+ */
+async function isLastFreeLesson(lessonId: number, courseId: number): Promise<boolean> {
+  const last = await prisma.lesson.findFirst({
+    where: {
+      isPreview: true,
+      status: "published",
+      topic: { module: { courseId, status: "published" } },
+    },
+    orderBy: [
+      { topic: { module: { sortOrder: "desc" } } },
+      { topic: { sortOrder: "desc" } },
+      { sortOrder: "desc" },
+      { id: "desc" },
+    ],
+    select: { id: true },
+  });
+  return last?.id === lessonId;
+}
+
+/**
  * Aula pelo endereço /disciplina/[curso]/[módulo]/[aula].
  * @param courseSlug Endereço da disciplina.
  * @param moduleSlug Endereço do módulo.
@@ -129,6 +154,14 @@ export const getLessonPage = cache(
     );
     const position = moduleLessons.findIndex((l) => l.id === lesson.id);
 
+    // Convite para assinar (etapa 4b): ao abrir a última aula grátis da
+    // disciplina, para quem não tem a disciplina na assinatura (visitante ou
+    // aluno sem assinatura). O acesso é decidido em lib/access.ts.
+    const inviteToSubscribe =
+      access === "free" &&
+      (await isLastFreeLesson(lesson.id, module.course.id)) &&
+      (await checkAccess({ isPreview: false, courseId: module.course.id }, studentId)) === "locked";
+
     const materialItems = await Promise.all(
       materials.map(async (m) => {
         const itemAccess = await checkAccess(
@@ -166,6 +199,7 @@ export const getLessonPage = cache(
         position >= 0 && position < moduleLessons.length - 1 ? moduleLessons[position + 1] : null,
       materials: materialItems,
       discussions,
+      inviteToSubscribe,
     };
   },
 );

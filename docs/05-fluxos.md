@@ -55,7 +55,10 @@ O aluno pode cancelar uma troca agendada antes da renovação.
    No cadastro por senha, o aluno recebe um link de confirmação por e-mail e
    só entra com senha depois de confirmar (RN01).
 2. **Entrar:** com Google, ou com e-mail e senha em `/entrar`. Google com um
-   e-mail já cadastrado entra na mesma conta (RN01).
+   e-mail já cadastrado entra na mesma conta (RN01). Depois de entrar, o
+   aluno vai para o **painel** (`/minha-area`); só quem clicou em "Entrar"
+   numa aula, disciplina ou atividade volta para ela (`loginReturnPath`, em
+   `lib/safe-next.ts`).
 3. **Limite de tentativas:** 5 erros a cada 15 min por IP e por e-mail (RNF03).
 4. **Sessões:** cookie httpOnly assinado (Better Auth). Até 2 sessões por
    aluno: ao abrir a 3ª, a mais antiga é encerrada (RN08). Cada entrada fica

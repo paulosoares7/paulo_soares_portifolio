@@ -32,8 +32,9 @@ adaptados ao tema escuro. As imagens estão em [`inspiracoes/`](inspiracoes/).
 | Assinar | `/assinar` | Preço, o que inclui, formulário (nome, e-mail, CPF) e forma de pagamento |
 | Sucesso | `/assinar/sucesso` | Código exibido uma vez + escolha das até 3 disciplinas |
 | Entrar | `/entrar` | Campo único com máscara `XXXX-XXXX-XXXX-XXXX` e link "perdi meu código" |
-| Minha área | `/minha-area` | Disciplinas da assinatura, vagas livres, troca agendada, próxima cobrança, progresso, conquistas, cancelar |
-| Celular | todas | Menu inferior fixo: Início, Aulas, Publicações, Minha área |
+| Painel do aluno | `/minha-area` | Tela de início depois do login: avisos da assinatura, números de desempenho, dias de estudo na semana, continuar de onde parou, últimas aulas, disciplinas com progresso, atividades, assinatura, conquistas e conta. Aluno novo: boas-vindas com aulas grátis. Sem assinatura: convite para assinar |
+| Convite para assinar | aula | Modal ao abrir a última aula grátis da disciplina (uma vez por visita) e cartão fixo abaixo do vídeo; o cadeado mostra o preço do plano |
+| Celular | todas | Menu inferior fixo: Início, Aulas, Professor, Painel |
 
 ## Mapa de páginas — admin
 
