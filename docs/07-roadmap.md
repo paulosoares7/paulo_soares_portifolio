@@ -20,6 +20,12 @@ Status conferido no código em 26/11/2026 (auditoria).
 Os vídeos reais podem entrar a qualquer momento depois da fase 2, sem mudar
 código.
 
+## Pendências adiadas
+
+| Item | Situação | Quando |
+| --- | --- | --- |
+| Seletor de tema (claro, escuro e sistema) no admin, portfolio e plataforma | Adiado pelo professor. A base está pronta: tokens de cor centralizados em `packages/ui/src/tokens.css` (commit `ae75e55`). Regras em `docs/prompts/auditoria-e-continuacao.md` (seção "REGRAS DO TEMA") | Semana de 30/11/2026 |
+
 ## Pendências por credencial
 
 | Funcionalidade | Situação | Credencial |
