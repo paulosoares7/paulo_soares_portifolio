@@ -87,3 +87,28 @@ marca), os e-mails (os programas de e-mail só aceitam cor escrita no HTML), a
 cor de cada disciplina (é um dado cadastrado no painel), o fundo preto do
 player de vídeo e a página de impressão dos relatórios (papel branco; vai usar
 o tema claro quando ele existir).
+
+## PWA (instalar como app)
+
+Os três apps (admin, portfolio e plataforma) podem ser instalados no celular
+e no computador ("Adicionar à tela inicial" / "Instalar app"). O código é
+comum, em `packages/ui/src/pwa.ts`:
+
+| Peça | Onde | O que faz |
+| --- | --- | --- |
+| Manifesto | `app/manifest.ts` de cada app | Nome, ícones, cor do tema escuro, abre em tela cheia (`standalone`) |
+| Ícones | `public/icons/` e `app/apple-icon.png` de cada app | 192 px, 512 px e 512 px "maskable" (recortável pelo sistema); provisórios, com o "P." do favicon |
+| Service worker | `app/sw.js/route.ts` | Só guarda a página "Sem conexão"; todo o resto vem sempre da rede |
+| Sem conexão | `app/offline.html/route.ts` | Aviso com o botão "Tentar de novo" quando a internet cai |
+| Registro | `ServiceWorkerRegister` no layout raiz | Liga o service worker depois que a página carrega |
+
+**Segurança:** nenhum conteúdo pago nem dado do aluno fica guardado no
+aparelho (páginas, PDFs, vídeos, imagens e respostas da API). O modo offline
+dos PDFs é uma melhoria futura, com criptografia
+(`docs/prompts/futuro-pdf-offline.md`). No admin, os arquivos do PWA abrem
+sem login (`proxy.ts`) para o "Instalar app" aparecer já na tela de login.
+
+Para trocar os ícones pelo logo definitivo: substitua os PNGs de
+`public/icons/` e o `app/apple-icon.png` de cada app, com os mesmos nomes e
+tamanhos. A página "Sem conexão" repete as cores do tema escuro porque abre
+sem internet e não carrega o Tailwind.

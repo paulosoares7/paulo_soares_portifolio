@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { getSiteIdentity, SITE_URL } from "@/lib/site";
 import "./globals.css";
 import { THEME_COLOR_DARK } from "@portfolio/ui/theme-color";
+import { ServiceWorkerRegister } from "@portfolio/ui/ServiceWorker";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -46,6 +47,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </main>
         <SiteFooter identity={identity} />
         <BottomNav />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

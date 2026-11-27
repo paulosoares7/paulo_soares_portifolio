@@ -21,5 +21,9 @@ export function proxy(request: NextRequest): NextResponse {
 
 export const config = {
   // Rotas de API verificam a sessão por conta própria (respondem 401 em JSON).
-  matcher: ["/((?!_next/|api/|favicon.ico).*)"],
+  // Arquivos do PWA (manifesto, service worker, página "Sem conexão" e
+  // ícones) ficam abertos: o navegador os busca sem sessão.
+  matcher: [
+    "/((?!_next/|api/|favicon.ico|manifest.webmanifest|sw.js|offline.html|icon|apple-icon|icons/).*)",
+  ],
 };

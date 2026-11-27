@@ -82,6 +82,8 @@ só links comuns (`<a>`).
   `payment_events` (idempotência).
 - Vídeo pago: URL com token que expira em 2 h + marca d'água com nome do aluno.
 - PDF: nunca baixável; visualização na plataforma com marca d'água.
+- PWA: o service worker (`@portfolio/ui/pwa`) só guarda a página "Sem conexão".
+  Páginas, PDFs, vídeos, imagens e respostas da API nunca ficam no aparelho.
 
 ## Visual
 

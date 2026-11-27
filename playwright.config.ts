@@ -1,4 +1,4 @@
-// Testes de ponta a ponta (Playwright) do admin e da plataforma.
+// Testes de ponta a ponta (Playwright) do admin, da plataforma e do portfolio.
 // Rodam contra os apps em desenvolvimento e o MySQL local com o seed.
 //   npm run e2e            (liga os apps que não estiverem no ar)
 //   npm run e2e -- --ui    (modo visual)
@@ -6,6 +6,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const ADMIN_URL = "http://localhost:3001";
 const PLATAFORMA_URL = "http://localhost:3002";
+const PORTFOLIO_URL = "http://localhost:3000";
 
 // No Windows usa o Edge que já vem instalado (evita baixar o Chromium).
 // Em outros sistemas: npx playwright install chromium.
@@ -44,6 +45,11 @@ export default defineConfig({
       testMatch: "plataforma/**/*.spec.ts",
       use: { ...devices["Desktop Chrome"], ...browser, baseURL: PLATAFORMA_URL },
     },
+    {
+      name: "portfolio",
+      testMatch: "portfolio/**/*.spec.ts",
+      use: { ...devices["Desktop Chrome"], ...browser, baseURL: PORTFOLIO_URL },
+    },
   ],
   webServer: [
     {
@@ -55,6 +61,12 @@ export default defineConfig({
     {
       command: "npm run plataforma:dev",
       url: PLATAFORMA_URL,
+      reuseExistingServer: true,
+      timeout: 180_000,
+    },
+    {
+      command: "npm run portfolio:dev",
+      url: PORTFOLIO_URL,
       reuseExistingServer: true,
       timeout: 180_000,
     },

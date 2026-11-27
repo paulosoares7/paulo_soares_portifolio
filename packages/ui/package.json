@@ -8,6 +8,8 @@
     "./theme.css": "./src/theme.css",
     "./tokens.css": "./src/tokens.css",
     "./theme-color": "./src/theme-color.ts",
+    "./pwa": "./src/pwa.ts",
+    "./ServiceWorker": "./src/ServiceWorker.tsx",
     "./Badge": "./src/Badge.tsx",
     "./Button": "./src/Button.tsx",
     "./Container": "./src/Container.tsx",
