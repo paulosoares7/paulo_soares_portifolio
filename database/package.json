@@ -21,13 +21,15 @@
     "migrate:status": "prisma migrate status",
     "seed": "prisma db seed",
     "create-admin": "tsx scripts/create-admin.ts",
+    "db:check": "tsx scripts/check-connection.ts",
     "backup": "bash scripts/backup.sh",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "7.10.1",
-    "@prisma/client": "7.10.1"
+    "@prisma/client": "7.10.1",
+    "mariadb": "3.5.4"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

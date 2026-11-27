@@ -14,6 +14,7 @@ import { parseArgs } from "node:util";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "../src/index";
+import { readHiddenInput } from "./terminal";
 
 // Custo 12: mesmo prefixo ($2b$12$) usado no placeholder do seed.
 const BCRYPT_COST = 12;
@@ -32,56 +33,8 @@ const inputSchema = z.object({
   password: z
     .string()
     .min(12, "A senha precisa ter pelo menos 12 caracteres.")
-    .max(
-      72,
-      "O bcrypt só usa os primeiros 72 bytes; use no máximo 72 caracteres.",
-    ),
+    .max(72, "O bcrypt só usa os primeiros 72 bytes; use no máximo 72 caracteres."),
 });
-
-/**
- * Lê uma senha do terminal sem mostrar os caracteres digitados.
- * @param prompt Texto exibido antes da digitação.
- * @returns A senha digitada.
- */
-function readHiddenInput(prompt: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const { stdin, stdout } = process;
-    if (!stdin.isTTY) {
-      reject(new Error("Terminal não interativo: defina ADMIN_PASSWORD."));
-      return;
-    }
-    stdout.write(prompt);
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding("utf8");
-
-    let value = "";
-    const onData = (chunk: string): void => {
-      for (const char of chunk) {
-        if (char === "\r" || char === "\n") {
-          stdin.setRawMode(false);
-          stdin.pause();
-          stdin.off("data", onData);
-          stdout.write("\n");
-          resolve(value);
-          return;
-        }
-        if (char === "\u0003") {
-          // Ctrl+C
-          stdin.setRawMode(false);
-          stdout.write("\n");
-          process.exit(130);
-        }
-        if (char === "\u007f" || char === "\b") {
-          value = value.slice(0, -1);
-        } else {
-          value += char;
-        }
-      }
-    };
-    stdin.on("data", onData);
-  });
-}
 
 /** Valida a entrada e grava (ou atualiza) o administrador. */
 async function main(): Promise<void> {
@@ -92,8 +45,7 @@ async function main(): Promise<void> {
     },
   });
 
-  const password =
-    process.env.ADMIN_PASSWORD ?? (await readHiddenInput("Senha do admin: "));
+  const password = process.env.ADMIN_PASSWORD ?? (await readHiddenInput("Senha do admin: "));
   if (!process.env.ADMIN_PASSWORD) {
     const confirmation = await readHiddenInput("Repita a senha: ");
     if (confirmation !== password) {
@@ -107,9 +59,7 @@ async function main(): Promise<void> {
     password,
   });
   if (!parsed.success) {
-    throw new Error(
-      parsed.error.issues.map((issue) => issue.message).join("\n"),
-    );
+    throw new Error(parsed.error.issues.map((issue) => issue.message).join("\n"));
   }
   const input = parsed.data;
 
@@ -136,9 +86,7 @@ async function main(): Promise<void> {
         isActive: true,
       },
     });
-    console.log(
-      `Conta placeholder do seed assumida: ${admin.email} (id ${admin.id}).`,
-    );
+    console.log(`Conta placeholder do seed assumida: ${admin.email} (id ${admin.id}).`);
     return;
   }
 

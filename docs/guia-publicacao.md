@@ -203,12 +203,28 @@ endereço do painel; ele não aparece em nenhum link do portfólio.
   Asaas em produção, domínio próprio e política de privacidade (roadmap,
   "Lançamento").
 
+## Testar a conexão (quando der erro)
+
+No seu terminal, dentro de `database/`, com a URL do TiDB no `export`:
+
+```bash
+export DATABASE_URL='SUA_URL'
+npm run db:check
+unset DATABASE_URL
+```
+
+Ele conecta pelo mesmo caminho dos sites (com a criptografia) e mostra **a
+causa real** quando falha (senha errada, banco inexistente, certificado,
+rede). Na Vercel, o erro aparece só como `pool failed to retrieve a
+connection`, que esconde a causa. O comando nunca mostra a URL nem a senha.
+
 ## Problemas comuns
 
-| Sintoma                                                       | Causa provável                                                                               |
-| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Build falha com `DATABASE_URL não definida`                   | variável não criada no projeto da Vercel (ou criada só para _Preview_; marque _Production_)  |
-| Página dá erro 500 e o log fala em `SSL`/`insecure transport` | falta `?sslaccept=strict` no fim da `DATABASE_URL`                                           |
-| `Access denied for user`                                      | usuário ou senha errados; gere outra senha no _Connect_ do TiDB e atualize nos três projetos |
-| Links e metadados apontam para `localhost`                    | `NEXT_PUBLIC_SITE_URL` não foi ajustada, ou faltou o **Redeploy** depois de ajustar          |
-| "Entrar com Google" dá `redirect_uri_mismatch`                | endereço da plataforma não cadastrado no Google Cloud (parte D.4)                            |
+| Sintoma                                                               | Causa provável                                                                               |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `pool failed to retrieve a connection from pool` (no build ou no log) | o site não conectou ao banco; rode `npm run db:check` para ver a causa                       |
+| Build falha com `DATABASE_URL não definida`                           | variável não criada no projeto da Vercel (ou criada só para _Preview_; marque _Production_)  |
+| Página dá erro 500 e o log fala em `SSL`/`insecure transport`         | falta `?sslaccept=strict` no fim da `DATABASE_URL`                                           |
+| `Access denied for user`                                              | usuário ou senha errados; gere outra senha no _Connect_ do TiDB e atualize nos três projetos |
+| Links e metadados apontam para `localhost`                            | `NEXT_PUBLIC_SITE_URL` não foi ajustada, ou faltou o **Redeploy** depois de ajustar          |
+| "Entrar com Google" dá `redirect_uri_mismatch`                        | endereço da plataforma não cadastrado no Google Cloud (parte D.4)                            |
