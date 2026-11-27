@@ -64,7 +64,7 @@ Para trocar a senha depois, rode o mesmo comando com o mesmo e-mail.
 
 ### Regras aplicadas pelo painel
 
-- **RN10:** até 2 aulas grátis (vídeo do YouTube) e 1 atividade grátis por disciplina.
+- **RN10:** cada disciplina define no cadastro o máximo de aulas grátis (vídeo do YouTube) e de atividades grátis. Padrão: 2 aulas e 1 atividade; vazio = sem limite.
 - **RN14:** disciplina que já esteve em assinatura não é apagada (só arquivada); aluno é anonimizado.
 - **RN15:** importação sempre com prévia; nada é gravado antes da escolha.
 - Endereço da aula único dentro do módulo (a URL do site é `/disciplina/[curso]/[módulo]/[aula]`).

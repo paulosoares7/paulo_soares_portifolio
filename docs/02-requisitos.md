@@ -30,7 +30,7 @@ na v1 · **Could** = pode ficar para a v2.
 | RF05 | Catálogo dividido em Vestibulares, Ensino Médio, Ensino Superior e Concursos, com cartões de disciplina (ícone, cor e, se assinante, progresso) | Must |
 | RF06 | Página da disciplina com abas **Aulas**, Atividades, Materiais e Fórum; aulas organizadas em módulos, temas e aulas | Must |
 | RF07 | Página da aula com player, resumo, materiais da aula e comentários; selo "vídeo em breve" quando a aula ainda não tem vídeo | Must |
-| RF08 | Aulas grátis (até 2 vídeos do YouTube + 1 atividade por disciplina) abertas sem assinatura | Must |
+| RF08 | Aulas grátis (vídeos do YouTube) e atividades grátis abertas sem assinatura, na quantidade que o professor definir por disciplina (padrão: 2 aulas + 1 atividade) | Must |
 | RF09 | Assinar: informar nome, e-mail e CPF, escolher Pix, Pix Automático ou cartão e pagar a 1ª mensalidade no Asaas | Must |
 | RF10 | Após a confirmação do 1º pagamento, liberar as disciplinas na conta do aluno e avisar por e-mail | Must |
 | RF11 | Escolher as disciplinas das vagas da assinatura (padrão 3, configurável no plano e por aluno); vagas vazias são preenchidas na hora | Must |
@@ -95,7 +95,7 @@ na v1 · **Could** = pode ficar para a v2.
 | RN07 | Vagas: o plano define de 1 a 10 (padrão 3) e o painel pode dar uma exceção por aluno; o banco garante o teto de 10 e o código, o limite do plano/aluno. Reduzir o limite não apaga disciplinas: a vaga a mais sai na renovação. Vaga vazia: preenchida na hora. Vaga ocupada: uma troca por ciclo, agendada com `effective_at` = fim do período e aplicada na renovação. |
 | RN08 | Ao abrir uma 3ª sessão na mesma conta, a sessão mais antiga é encerrada. |
 | RN09 | Cada evento do webhook é processado uma única vez (`payment_events`). |
-| RN10 | Grátis por disciplina: até 2 aulas com vídeo do YouTube + 1 atividade, abertas sem assinatura. |
+| RN10 | Grátis por disciplina: o professor define no cadastro da disciplina o máximo de aulas grátis (sempre com vídeo do YouTube) e de atividades grátis, abertas sem assinatura. Padrão: 2 aulas + 1 atividade; campo vazio = sem limite. Reduzir o limite não desmarca o que já é grátis: só impede marcar novas. |
 | RN11 | Aula sem vídeo aparece com o selo "vídeo em breve" e mantém materiais e fórum. |
 | RN12 | PDF nunca é baixável. |
 | RN13 | Post de aluno entra como `pending` e só aparece após aprovação. Só assinantes da disciplina postam; visitantes leem os avisos. |

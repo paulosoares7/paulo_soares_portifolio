@@ -111,7 +111,7 @@ export function ActivityForm({ item, tree }: { item?: ActivityValues; tree: Cour
         <Checkbox
           name="isPreview"
           defaultChecked={item?.isPreview ?? false}
-          label="Atividade grátis (1 por disciplina, junto das 2 aulas grátis)"
+          label="Atividade grátis (aberta sem login; limite definido na disciplina)"
         />
         {errors.isPreview ? (
           <p className="text-danger mt-1 text-xs">{errors.isPreview[0]}</p>

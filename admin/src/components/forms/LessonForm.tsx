@@ -130,7 +130,7 @@ export function LessonForm({ item, topicId, topics, videos, compact = false }: L
         <Checkbox
           name="isPreview"
           defaultChecked={item?.isPreview ?? false}
-          label="Aula grátis (aberta sem login; até 2 por disciplina, vídeo do YouTube)"
+          label="Aula grátis (aberta sem login; vídeo do YouTube; limite definido na disciplina)"
         />
         {errors.isPreview ? (
           <p className="text-danger mt-1 text-xs">{errors.isPreview[0]}</p>

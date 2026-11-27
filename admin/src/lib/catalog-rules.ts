@@ -1,9 +1,20 @@
 // Regras do catálogo aplicadas pelo painel (as do banco ficam no banco).
 import { prisma } from "@portfolio/database";
 
-/** RN10: até 2 aulas grátis (vídeo do YouTube) e 1 atividade grátis por disciplina. */
-export const MAX_FREE_LESSONS = 2;
-export const MAX_FREE_ACTIVITIES = 1;
+// RN10: cada disciplina tem o seu limite de aulas e atividades grátis,
+// definido no cadastro (courses.max_free_lessons / max_free_activities).
+// null = sem limite. Novas disciplinas começam com 2 aulas e 1 atividade.
+
+/** Limites grátis de uma disciplina (null = sem limite). */
+async function freeLimits(
+  courseId: number,
+): Promise<{ lessons: number | null; activities: number | null }> {
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { maxFreeLessons: true, maxFreeActivities: true },
+  });
+  return { lessons: course?.maxFreeLessons ?? null, activities: course?.maxFreeActivities ?? null };
+}
 
 /**
  * Confere a RN10 para uma aula marcada como grátis.
@@ -17,15 +28,20 @@ export async function checkFreeLessonRule(
   lessonId: number | null,
   videoId: number | null,
 ): Promise<string | null> {
-  const freeCount = await prisma.lesson.count({
-    where: {
-      isPreview: true,
-      topic: { module: { courseId } },
-      ...(lessonId ? { id: { not: lessonId } } : {}),
-    },
-  });
-  if (freeCount >= MAX_FREE_LESSONS) {
-    return `Esta disciplina já tem ${MAX_FREE_LESSONS} aulas grátis (limite da regra RN10).`;
+  const { lessons: limit } = await freeLimits(courseId);
+  if (limit !== null) {
+    const freeCount = await prisma.lesson.count({
+      where: {
+        isPreview: true,
+        topic: { module: { courseId } },
+        ...(lessonId ? { id: { not: lessonId } } : {}),
+      },
+    });
+    if (freeCount >= limit) {
+      return limit === 0
+        ? "Esta disciplina não permite aulas grátis. Mude o limite no cadastro da disciplina."
+        : `Esta disciplina já tem ${limit} ${limit === 1 ? "aula grátis" : "aulas grátis"} (o limite dela). Aumente o limite no cadastro da disciplina.`;
+    }
   }
   if (videoId) {
     const video = await prisma.video.findUnique({
@@ -49,6 +65,8 @@ export async function checkFreeActivityRule(
   courseId: number,
   activityId: number | null,
 ): Promise<string | null> {
+  const { activities: limit } = await freeLimits(courseId);
+  if (limit === null) return null;
   const freeCount = await prisma.activity.count({
     where: {
       isPreview: true,
@@ -56,9 +74,10 @@ export async function checkFreeActivityRule(
       ...(activityId ? { id: { not: activityId } } : {}),
     },
   });
-  return freeCount >= MAX_FREE_ACTIVITIES
-    ? `Esta disciplina já tem ${MAX_FREE_ACTIVITIES} atividade grátis (limite da regra RN10).`
-    : null;
+  if (freeCount < limit) return null;
+  return limit === 0
+    ? "Esta disciplina não permite atividades grátis. Mude o limite no cadastro da disciplina."
+    : `Esta disciplina já tem ${limit} ${limit === 1 ? "atividade grátis" : "atividades grátis"} (o limite dela). Aumente o limite no cadastro da disciplina.`;
 }
 
 /**

@@ -519,23 +519,27 @@ model CourseGroup {
 
 /// Disciplinas ou preparatórios (ex.: Física I, ESA, PSC 1).
 model Course {
-  id               Int          @id @default(autoincrement()) @db.UnsignedInt
-  groupId          Int          @map("group_id") @db.UnsignedInt
+  id                Int          @id @default(autoincrement()) @db.UnsignedInt
+  groupId           Int          @map("group_id") @db.UnsignedInt
   /// Usado na URL: /disciplina/fisica-1
-  slug             String       @unique(map: "uq_courses_slug") @db.VarChar(120)
-  title            String       @db.VarChar(150)
-  shortDescription String       @map("short_description") @db.VarChar(300)
+  slug              String       @unique(map: "uq_courses_slug") @db.VarChar(120)
+  title             String       @db.VarChar(150)
+  shortDescription  String       @map("short_description") @db.VarChar(300)
   /// Markdown.
-  description      String?      @db.Text
-  coverFileId      Int?         @map("cover_file_id") @db.UnsignedInt
+  description       String?      @db.Text
+  coverFileId       Int?         @map("cover_file_id") @db.UnsignedInt
   /// Nome do ícone lucide (ex.: atom).
-  icon             String?      @db.VarChar(40)
+  icon              String?      @db.VarChar(40)
   /// Cor do cartão em hex (ex.: #0EA5E9).
-  color            String?      @db.Char(7)
-  status           CourseStatus @default(draft)
-  sortOrder        Int          @default(0) @map("sort_order") @db.UnsignedSmallInt
-  createdAt        DateTime     @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  color             String?      @db.Char(7)
+  status            CourseStatus @default(draft)
+  /// RN10: máximo de aulas grátis na disciplina (null = sem limite).
+  maxFreeLessons    Int?         @default(2) @map("max_free_lessons") @db.UnsignedSmallInt
+  /// RN10: máximo de atividades grátis na disciplina (null = sem limite).
+  maxFreeActivities Int?         @default(1) @map("max_free_activities") @db.UnsignedSmallInt
+  sortOrder         Int          @default(0) @map("sort_order") @db.UnsignedSmallInt
+  createdAt         DateTime     @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt         DateTime     @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
 
   group               CourseGroup                @relation(fields: [groupId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_courses_group")
   coverFile           MediaFile?                 @relation(fields: [coverFileId], references: [id], onDelete: SetNull, onUpdate: NoAction, map: "fk_courses_cover")

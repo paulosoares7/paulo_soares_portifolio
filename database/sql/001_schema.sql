@@ -271,6 +271,8 @@ CREATE TABLE courses (
   icon              VARCHAR(40) NULL COMMENT 'Nome do ícone lucide (ex.: atom)',
   color             CHAR(7) NULL COMMENT 'Cor do cartão em hex (ex.: #0EA5E9)',
   status            ENUM('draft','published','archived') NOT NULL DEFAULT 'draft',
+  max_free_lessons  SMALLINT UNSIGNED NULL DEFAULT 2 COMMENT 'RN10: máximo de aulas grátis (NULL = sem limite)',
+  max_free_activities SMALLINT UNSIGNED NULL DEFAULT 1 COMMENT 'RN10: máximo de atividades grátis (NULL = sem limite)',
   sort_order        SMALLINT UNSIGNED NOT NULL DEFAULT 0,
   created_at        DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at        DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),

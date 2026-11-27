@@ -25,7 +25,6 @@ import { ItemRow } from "@/components/ui/ItemRow";
 import { ModalTrigger } from "@/components/ui/ModalTrigger";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { SortableList } from "@/components/ui/SortableList";
-import { MAX_FREE_LESSONS } from "@/lib/catalog-rules";
 import { CONTENT_STATUSES, VIDEO_PROVIDERS } from "@/lib/labels";
 import { createReadUrl, isStorageConfigured } from "@/lib/storage";
 import { loadVideoOptions } from "@/lib/video-options";
@@ -87,7 +86,7 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
       <PageHeader
         title={course.title}
         back={{ href: "/disciplinas", label: "Disciplinas" }}
-        description={`${course.group.category.name} › ${course.group.name} · ${course.modules.length} módulo(s) · ${allLessons.length} aula(s) · ${freeLessons}/${MAX_FREE_LESSONS} aulas grátis`}
+        description={`${course.group.category.name} › ${course.group.name} · ${course.modules.length} módulo(s) · ${allLessons.length} aula(s) · ${freeLessons}${course.maxFreeLessons === null ? "" : `/${course.maxFreeLessons}`} aulas grátis${course.maxFreeLessons === null ? " (sem limite)" : ""}`}
       />
       <div className="flex flex-col gap-6">
         <Card>
@@ -285,6 +284,8 @@ export default async function CoursePage({ params }: { params: Promise<{ id: str
               icon: course.icon ?? "",
               color: course.color ?? "",
               status: course.status,
+              maxFreeLessons: course.maxFreeLessons?.toString() ?? "",
+              maxFreeActivities: course.maxFreeActivities?.toString() ?? "",
             }}
           />
         </Card>

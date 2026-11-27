@@ -311,6 +311,8 @@ ESA, 1º ano, Física). O slug é único dentro da categoria.
 | `icon` | varchar(40) | sim |  | Nome do ícone lucide (ex.: atom) |
 | `color` | char(7) | sim |  | Cor do cartão em hex (ex.: #0EA5E9) |
 | `status` | enum('draft','published','archived') | não |  |  |
+| `max_free_lessons` | smallint(5) unsigned | sim | padrão 2 | RN10: máximo de aulas grátis da disciplina, definido no painel (NULL = sem limite) |
+| `max_free_activities` | smallint(5) unsigned | sim | padrão 1 | RN10: máximo de atividades grátis da disciplina (NULL = sem limite) |
 | `sort_order` | smallint(5) unsigned | não |  |  |
 | `created_at` | datetime(3) | não |  |  |
 | `updated_at` | datetime(3) | não |  |  |

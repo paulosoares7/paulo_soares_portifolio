@@ -21,6 +21,9 @@ export type CourseValues = {
   icon: string;
   color: string;
   status: string;
+  /** RN10: vazio = sem limite. */
+  maxFreeLessons: string;
+  maxFreeActivities: string;
 };
 
 /** Categorias com seus grupos, para o seletor em dois níveis. */
@@ -32,7 +35,10 @@ type CourseFormProps = {
   defaultGroupId?: number;
 };
 
-/** Dados da disciplina: grupo, título, endereço, textos, ícone, cor e status. */
+/**
+ * Dados da disciplina: grupo, título, endereço, textos, ícone, cor, status e
+ * quantas aulas e atividades grátis ela pode ter (RN10).
+ */
 export function CourseForm({ item, categories, defaultGroupId }: CourseFormProps) {
   const { formProps, state, pending, errors } = useFormAction(courseSchema, saveCourse);
   const [icon, setIcon] = useState(item?.icon || "atom");
@@ -153,6 +159,49 @@ export function CourseForm({ item, categories, defaultGroupId }: CourseFormProps
           />
         </div>
       </Field>
+      <fieldset className="border-border rounded-card grid gap-4 border p-4 md:col-span-2 md:grid-cols-2">
+        <legend className="px-1 text-sm font-medium">Conteúdo grátis (aberto sem login)</legend>
+        <Field
+          label="Máximo de aulas grátis"
+          htmlFor="course-free-lessons"
+          error={errors.maxFreeLessons}
+          hint="Vazio = sem limite. 0 = nenhuma. Aula grátis usa vídeo do YouTube."
+        >
+          <Input
+            id="course-free-lessons"
+            name="maxFreeLessons"
+            type="number"
+            min={0}
+            max={999}
+            inputMode="numeric"
+            placeholder="sem limite"
+            defaultValue={item ? item.maxFreeLessons : "2"}
+            invalid={!!errors.maxFreeLessons}
+          />
+        </Field>
+        <Field
+          label="Máximo de atividades grátis"
+          htmlFor="course-free-activities"
+          error={errors.maxFreeActivities}
+          hint="Vazio = sem limite. 0 = nenhuma."
+        >
+          <Input
+            id="course-free-activities"
+            name="maxFreeActivities"
+            type="number"
+            min={0}
+            max={999}
+            inputMode="numeric"
+            placeholder="sem limite"
+            defaultValue={item ? item.maxFreeActivities : "1"}
+            invalid={!!errors.maxFreeActivities}
+          />
+        </Field>
+        <p className="text-muted text-xs md:col-span-2">
+          Diminuir o limite não desmarca o que já é grátis: só impede marcar novas aulas ou
+          atividades como grátis.
+        </p>
+      </fieldset>
       <div className="md:col-span-2">
         <FormFooter state={state} pending={pending} label={item ? "Salvar" : "Criar disciplina"} />
       </div>

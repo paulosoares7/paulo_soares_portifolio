@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { CONTENT_STATUSES, COURSE_STATUSES, enumValues } from "@/lib/labels";
-import { checkbox, id, optionalId, optionalText, requiredText, slug } from "@/validators/common";
+import {
+  checkbox,
+  id,
+  optionalId,
+  optionalInt,
+  optionalText,
+  requiredText,
+  slug,
+} from "@/validators/common";
 
 /** Seção do catálogo (Vestibulares, Ensino Médio...). */
 export const categorySchema = z.object({
@@ -33,6 +41,9 @@ export const courseSchema = z.object({
     "Cor no formato #0EA5E9.",
   ),
   status: z.enum(enumValues(COURSE_STATUSES)),
+  // RN10: vazio = sem limite.
+  maxFreeLessons: optionalInt(0, 999),
+  maxFreeActivities: optionalInt(0, 999),
 });
 
 /** Módulo de uma disciplina. */
